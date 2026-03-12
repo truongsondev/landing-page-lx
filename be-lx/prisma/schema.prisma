@@ -1,0 +1,150 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+enum Role {
+  ADMIN
+  MODERATOR
+  MEMBER
+  GUEST
+}
+
+enum PostStatus {
+  DRAFT
+  PENDING
+  PUBLISHED
+  ARCHIVED
+}
+
+enum MemberStatus {
+  ACTIVE
+  INACTIVE
+  ALUMNI
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  firstName String
+  lastName  String
+  role      Role     @default(GUEST)
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  member          Member?
+  posts           Post[]
+  sportActivities SportActivity[]
+
+  @@map("users")
+}
+
+model Member {
+  id          String       @id @default(uuid())
+  userId      String       @unique
+  studentId   String?      @unique
+  phoneNumber String?
+  address     String?
+  joinDate    DateTime     @default(now())
+  status      MemberStatus @default(ACTIVE)
+  bio         String?      @db.Text
+  position    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  // Relations
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("members")
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  posts Post[]
+
+  @@map("categories")
+}
+
+model Post {
+  id         String     @id @default(uuid())
+  title      String
+  slug       String     @unique
+  content    String     @db.Text
+  excerpt    String?    @db.Text
+  thumbnail  String?
+  status     PostStatus @default(DRAFT)
+  authorId   String
+  categoryId String
+  viewCount  Int        @default(0)
+  isPinned   Boolean    @default(false)
+  publishAt  DateTime?
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  // Relations
+  author   User     @relation(fields: [authorId], references: [id])
+  category Category @relation(fields: [categoryId], references: [id])
+  images   Image[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status])
+  @@map("posts")
+}
+
+model Image {
+  id          String   @id @default(uuid())
+  url         String
+  publicId    String
+  postId      String?
+  activityId  String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relations
+  post     Post?          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  activity SportActivity? @relation(fields: [activityId], references: [id], onDelete: Cascade)
+
+  @@index([postId])
+  @@index([activityId])
+  @@map("images")
+}
+
+model SportActivity {
+  id          String    @id @default(uuid())
+  name        String
+  description String?   @db.Text
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  organizer   String?
+  organizerId String
+  thumbnail   String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  // Relations
+  organizerUser User    @relation(fields: [organizerId], references: [id])
+  images        Image[]
+
+  @@index([organizerId])
+  @@map("sport_activities")
+}

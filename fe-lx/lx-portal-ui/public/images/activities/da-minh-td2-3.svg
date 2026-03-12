@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Hoạt động Đa Minh Thủ Đức 2">
+  <defs>
+    <linearGradient id="g3" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g3)"/>
+  <path d="M0 620 Q300 500 600 620 T1200 620 V800 H0Z" fill="rgba(255,255,255,.16)"/>
+  <text x="80" y="330" fill="white" font-size="68" font-family="Segoe UI, Arial" font-weight="700">Đa Minh Thủ Đức 2</text>
+  <text x="80" y="405" fill="white" font-size="40" font-family="Segoe UI, Arial">Lưu xá năng động, gắn kết, thân thiện</text>
+</svg>

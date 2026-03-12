@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Hoạt động Đa Minh Thủ Đức 2">
+  <defs>
+    <linearGradient id="g1" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#1d4ed8"/>
+      <stop offset="100%" stop-color="#0ea5e9"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#g1)"/>
+  <circle cx="980" cy="130" r="150" fill="rgba(255,255,255,.16)"/>
+  <circle cx="180" cy="700" r="190" fill="rgba(255,255,255,.14)"/>
+  <text x="70" y="360" fill="white" font-size="72" font-family="Segoe UI, Arial" font-weight="700">Đa Minh Thủ Đức 2</text>
+  <text x="70" y="430" fill="white" font-size="42" font-family="Segoe UI, Arial">Sinh viên Nhịp Bước Đa Minh</text>
+  <text x="70" y="510" fill="rgba(255,255,255,.9)" font-size="32" font-family="Segoe UI, Arial">Không gian hoạt động cộng đồng</text>
+</svg>
