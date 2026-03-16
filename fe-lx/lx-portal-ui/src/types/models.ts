@@ -34,28 +34,38 @@ export interface Post {
   excerpt?: string | null;
   content?: string | null;
   thumbnail?: string | null;
+  location?: string | null;
+  eventTime?: string | null;
   status: "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
   isPinned?: boolean;
   viewCount?: number;
   category?: Category | null;
   author?: User | null;
   publishedAt?: string | null;
+  publishAt?: string | null;
   createdAt?: string;
 }
 
 export interface Member {
   id: string;
   userId?: string;
+  name?: string;
   fullName?: string;
   firstName?: string;
   lastName?: string;
   email?: string;
   avatar?: string | null;
+  saintName?: string | null;
+  dateOfBirth?: string | null;
+  school?: string | null;
   position?: string | null;
   studentId?: string | null;
+  phoneNumber?: string | null;
+  address?: string | null;
   bio?: string | null;
   status?: "ACTIVE" | "INACTIVE" | "ALUMNI";
   joinDate?: string | null;
+  createdAt?: string;
 }
 
 export interface Activity {

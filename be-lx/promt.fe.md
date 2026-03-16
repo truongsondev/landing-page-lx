@@ -17,6 +17,11 @@ Bạn có khả năng:
 
 ### CONTEXT
 
+Code trang dashboard dùng để quản lí thành viên, quản lí thông báo
+Bao gồm
+Thêm sửa xóa thành viên
+Thêm sửa thông báo: về thông báo sẽ bao gồm
+
 ### INSTRUCTION
 
 Tạo dự án trong 1 thư mục riêng, tách biệt với frontend

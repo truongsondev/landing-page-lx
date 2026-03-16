@@ -95,7 +95,7 @@ router.get(
 router.post(
   "/",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN),
   uploadLimiter, // Rate limit uploads
   upload.single("thumbnail"),
   [
@@ -109,6 +109,14 @@ router.post(
       .withMessage("Slug is required and must be less than 200 characters"),
     body("content").notEmpty().withMessage("Content is required"),
     body("categoryId").isUUID().withMessage("Valid category UUID is required"),
+    body("location")
+      .notEmpty()
+      .isLength({ max: 500 })
+      .withMessage("Location is required and must be less than 500 characters"),
+    body("eventTime")
+      .notEmpty()
+      .isISO8601()
+      .withMessage("Event time is required and must be a valid datetime"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -117,6 +125,7 @@ router.post(
         ...req.body,
         authorId: req.user!.id,
         isPinned: req.body.isPinned === "true",
+        eventTime: new Date(req.body.eventTime),
       };
       const post = await postUseCase.createPost(postData, req.file);
       res.status(201).json(post);
@@ -129,16 +138,32 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN),
   uploadLimiter, // Rate limit uploads
   upload.single("thumbnail"),
-  [param("id").isUUID().withMessage("Invalid post ID")],
+  [
+    param("id").isUUID().withMessage("Invalid post ID"),
+    body("location")
+      .optional()
+      .isLength({ max: 500 })
+      .withMessage("Location must be less than 500 characters"),
+    body("eventTime")
+      .optional()
+      .isISO8601()
+      .withMessage("Event time must be a valid datetime"),
+  ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
+      const updateData = {
+        ...req.body,
+        eventTime: req.body.eventTime
+          ? new Date(req.body.eventTime)
+          : undefined,
+      };
       const post = await postUseCase.updatePost(
         req.params.id,
-        req.body,
+        updateData,
         req.file,
       );
       res.json(post);
@@ -151,7 +176,7 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN),
   [param("id").isUUID().withMessage("Invalid post ID")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -167,7 +192,7 @@ router.delete(
 router.patch(
   "/:id/publish",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN),
   [param("id").isUUID().withMessage("Invalid post ID")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -183,7 +208,7 @@ router.patch(
 router.patch(
   "/:id/unpublish",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN),
   [param("id").isUUID().withMessage("Invalid post ID")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {

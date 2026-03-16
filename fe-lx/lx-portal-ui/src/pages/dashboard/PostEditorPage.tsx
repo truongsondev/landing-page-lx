@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { postsService } from "@/services/posts.service";
+import { postsService, type UpsertPostPayload } from "@/services/posts.service";
 
 interface FormData {
   title: string;
@@ -11,8 +11,12 @@ interface FormData {
   content: string;
   excerpt: string;
   categoryId: string;
+  location: string;
+  eventTime: string;
   status: "DRAFT" | "PENDING" | "PUBLISHED" | "ARCHIVED";
   isPinned: boolean;
+  publishAt: string;
+  thumbnail: FileList;
 }
 
 const slugify = (value: string) =>
@@ -22,6 +26,37 @@ const slugify = (value: string) =>
     .replace(/[^a-zA-Z0-9\s-]/g, "")
     .trim()
     .replace(/\s+/g, "-");
+
+const toLocalDateTimeValue = (iso?: string | null) => {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const timezoneOffsetInMs = date.getTimezoneOffset() * 60 * 1000;
+  return new Date(date.getTime() - timezoneOffsetInMs)
+    .toISOString()
+    .slice(0, 16);
+};
+
+const trimOrUndefined = (value?: string) => {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+};
+
+const toPayload = (values: FormData): UpsertPostPayload => ({
+  title: values.title.trim(),
+  slug: values.slug.trim(),
+  content: values.content.trim(),
+  excerpt: trimOrUndefined(values.excerpt),
+  categoryId: values.categoryId.trim(),
+  location: values.location.trim(),
+  eventTime: new Date(values.eventTime).toISOString(),
+  status: values.status,
+  isPinned: Boolean(values.isPinned),
+  publishAt: values.publishAt
+    ? new Date(values.publishAt).toISOString()
+    : undefined,
+  thumbnail: values.thumbnail?.[0] || null,
+});
 
 export function PostEditorPage() {
   const { id } = useParams();
@@ -35,8 +70,11 @@ export function PostEditorPage() {
       content: "",
       excerpt: "",
       categoryId: "",
+      location: "",
+      eventTime: "",
       status: "DRAFT",
       isPinned: false,
+      publishAt: "",
     },
   });
 
@@ -54,8 +92,13 @@ export function PostEditorPage() {
         content: detail.data.content || "",
         excerpt: detail.data.excerpt || "",
         categoryId: detail.data.category?.id || "",
+        location: detail.data.location || "",
+        eventTime: toLocalDateTimeValue(detail.data.eventTime),
         status: detail.data.status,
         isPinned: Boolean(detail.data.isPinned),
+        publishAt: toLocalDateTimeValue(
+          detail.data.publishAt || detail.data.publishedAt,
+        ),
       });
     }
   }, [detail.data, isEdit, reset]);
@@ -69,31 +112,34 @@ export function PostEditorPage() {
   const create = useMutation({
     mutationFn: postsService.create,
     onSuccess: () => {
-      toast.success("Tạo bài viết thành công");
+      toast.success("Tạo thông báo thành công");
       navigate("/dashboard/posts");
     },
   });
 
   const update = useMutation({
-    mutationFn: (payload: FormData) => postsService.update(id || "", payload),
+    mutationFn: (payload: UpsertPostPayload) =>
+      postsService.update(id || "", payload),
     onSuccess: () => {
-      toast.success("Cập nhật bài viết thành công");
+      toast.success("Cập nhật thông báo thành công");
       navigate("/dashboard/posts");
     },
   });
 
   const onSubmit = async (data: FormData) => {
+    const payload = toPayload(data);
+
     if (isEdit) {
-      await update.mutateAsync(data);
+      await update.mutateAsync(payload);
       return;
     }
-    await create.mutateAsync(data);
+    await create.mutateAsync(payload);
   };
 
   return (
     <div>
       <h1 className="mb-4 text-2xl font-bold">
-        {isEdit ? "Sửa bài viết" : "Tạo bài viết"}
+        {isEdit ? "Sửa thông báo" : "Tạo thông báo"}
       </h1>
       <form
         onSubmit={handleSubmit(onSubmit)}
@@ -114,6 +160,16 @@ export function PostEditorPage() {
             {...register("content", { required: true })}
             rows={12}
             placeholder="Nội dung"
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
+          <input
+            {...register("location", { required: true })}
+            placeholder="Địa điểm"
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
+          <input
+            type="datetime-local"
+            {...register("eventTime", { required: true })}
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
         </div>
@@ -138,11 +194,22 @@ export function PostEditorPage() {
             placeholder="Excerpt"
             className="w-full rounded-md border border-slate-300 px-3 py-2"
           />
+          <input
+            type="datetime-local"
+            {...register("publishAt")}
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
+          <input
+            type="file"
+            accept="image/*"
+            {...register("thumbnail")}
+            className="w-full rounded-md border border-slate-300 px-3 py-2"
+          />
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("isPinned")} /> Ghim bài viết
+            <input type="checkbox" {...register("isPinned")} /> Ghim thông báo
           </label>
           <button className="w-full rounded-md bg-blue-600 px-3 py-2 font-semibold text-white">
-            {isEdit ? "Cập nhật" : "Lưu bài viết"}
+            {isEdit ? "Cập nhật" : "Lưu thông báo"}
           </button>
         </aside>
       </form>

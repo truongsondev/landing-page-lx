@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import dayjs from "dayjs";
 import { toast } from "sonner";
 import { membersService } from "@/services/members.service";
 import { Loading } from "@/components/common/Loading";
@@ -22,6 +23,15 @@ export function MembersManagementPage() {
     mutationFn: membersService.remove,
     onSuccess: () => {
       toast.success("Đã xóa thành viên");
+      qc.invalidateQueries({ queryKey: ["dashboard-members"] });
+    },
+  });
+
+  const changeStatus = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: Member["status"] }) =>
+      membersService.changeStatus(id, status || "ACTIVE"),
+    onSuccess: () => {
+      toast.success("Đã cập nhật trạng thái thành viên");
       qc.invalidateQueries({ queryKey: ["dashboard-members"] });
     },
   });
@@ -52,26 +62,55 @@ export function MembersManagementPage() {
         <table className="min-w-full bg-white text-sm">
           <thead className="bg-slate-50">
             <tr>
+              <th className="px-3 py-2 text-left">ID</th>
               <th className="px-3 py-2 text-left">Họ tên</th>
-              <th className="px-3 py-2 text-left">Email</th>
+              <th className="px-3 py-2 text-left">Tên thánh</th>
+              <th className="px-3 py-2 text-left">Trường học</th>
               <th className="px-3 py-2 text-left">MSSV</th>
               <th className="px-3 py-2 text-left">Vị trí</th>
               <th className="px-3 py-2 text-left">Status</th>
+              <th className="px-3 py-2 text-left">Ngày tạo</th>
               <th className="px-3 py-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {(query.data?.data || []).map((member: Member) => (
               <tr key={member.id} className="border-t border-slate-100">
+                <td className="px-3 py-2 text-xs text-slate-500">
+                  {member.id}
+                </td>
                 <td className="px-3 py-2">
-                  {member.fullName ||
+                  {member.name ||
+                    member.fullName ||
                     `${member.lastName || ""} ${member.firstName || ""}`.trim()}
                 </td>
-                <td className="px-3 py-2">{member.email || "--"}</td>
+                <td className="px-3 py-2">{member.saintName || "--"}</td>
+                <td className="px-3 py-2">{member.school || "--"}</td>
                 <td className="px-3 py-2">{member.studentId || "--"}</td>
                 <td className="px-3 py-2">{member.position || "--"}</td>
                 <td className="px-3 py-2">
-                  <StatusBadge status={member.status || "ACTIVE"} />
+                  <div className="flex items-center gap-2">
+                    <StatusBadge status={member.status || "ACTIVE"} />
+                    <select
+                      value={member.status || "ACTIVE"}
+                      onChange={(e) =>
+                        changeStatus.mutate({
+                          id: member.id,
+                          status: e.target.value as Member["status"],
+                        })
+                      }
+                      className="rounded-md border border-slate-300 px-2 py-1 text-xs"
+                    >
+                      <option value="ACTIVE">ACTIVE</option>
+                      <option value="INACTIVE">INACTIVE</option>
+                      <option value="ALUMNI">ALUMNI</option>
+                    </select>
+                  </div>
+                </td>
+                <td className="px-3 py-2">
+                  {member.createdAt
+                    ? dayjs(member.createdAt).format("DD/MM/YYYY")
+                    : "--"}
                 </td>
                 <td className="px-3 py-2">
                   <Link

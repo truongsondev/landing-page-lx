@@ -1,0 +1,124 @@
+name: lx-stack
+
+services:
+  mysql:
+    image: mysql:8.0
+    container_name: lx_mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-luuxa_db}
+      MYSQL_USER: ${MYSQL_USER:-luuxa_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-luuxa_password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-uroot",
+          "-p${MYSQL_ROOT_PASSWORD:-password}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+    networks:
+      - lx_network
+
+  backend:
+    build:
+      context: ./be-lx
+      dockerfile: Dockerfile
+    container_name: lx_backend
+    restart: unless-stopped
+    environment:
+      PORT: 3000
+      NODE_ENV: production
+      DATABASE_URL: mysql://${MYSQL_USER:-luuxa_user}:${MYSQL_PASSWORD:-luuxa_password}@mysql:3306/${MYSQL_DATABASE:-luuxa_db}
+      JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:8080,http://localhost:5173}
+      CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
+      CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
+      CLOUDINARY_API_SECRET: ${CLOUDINARY_API_SECRET:-}
+    ports:
+      - "3000:3000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    command:
+      - sh
+      - -c
+      - |
+        until npx prisma migrate deploy; do
+          echo "Waiting for MySQL to be ready..."
+          sleep 3
+        done
+        npm run prisma:generate
+        npm start
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - lx_network
+
+  frontend:
+    build:
+      context: ./fe-lx/lx-portal-ui
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+    container_name: lx_frontend
+    restart: unless-stopped
+    ports:
+      - "8080:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
+      - prod
+    networks:
+      - lx_network
+
+  frontend-dev:
+    build:
+      context: ./fe-lx/lx-portal-ui
+      dockerfile: Dockerfile.dev
+    container_name: lx_frontend_dev
+    environment:
+      VITE_API_URL: ${VITE_API_URL:-http://localhost:3000/api}
+      CHOKIDAR_USEPOLLING: "true"
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./fe-lx/lx-portal-ui:/app
+      - /app/node_modules
+    depends_on:
+      backend:
+        condition: service_healthy
+    profiles:
+      - dev
+    networks:
+      - lx_network
+
+volumes:
+  mysql_data:
+
+networks:
+  lx_network:
+    driver: bridge

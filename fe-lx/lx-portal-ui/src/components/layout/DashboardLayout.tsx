@@ -3,7 +3,7 @@ import { useAuthStore, type AuthState } from "@/stores/auth.store";
 
 const menus = [
   { to: "/dashboard", label: "Tổng quan" },
-  { to: "/dashboard/posts", label: "Bài viết" },
+  { to: "/dashboard/posts", label: "Thông báo" },
   { to: "/dashboard/members", label: "Thành viên" },
   { to: "/dashboard/activities", label: "Hoạt động" },
   { to: "/dashboard/profile", label: "Hồ sơ" },

@@ -44,6 +44,11 @@ export function mapMember(prismaMember: any): Member {
   return {
     ...prismaMember,
     status: mapMemberStatus(prismaMember.status),
+    name: prismaMember.name ?? undefined,
+    avatar: prismaMember.avatar ?? undefined,
+    saintName: prismaMember.saintName ?? undefined,
+    dateOfBirth: prismaMember.dateOfBirth ?? undefined,
+    school: prismaMember.school ?? undefined,
     studentId: prismaMember.studentId ?? undefined,
     phoneNumber: prismaMember.phoneNumber ?? undefined,
     address: prismaMember.address ?? undefined,
@@ -59,6 +64,8 @@ export function mapPost(prismaPost: any): Post {
   return {
     ...prismaPost,
     status: mapPostStatus(prismaPost.status),
+    location: prismaPost.location ?? undefined,
+    eventTime: prismaPost.eventTime ?? undefined,
     excerpt: prismaPost.excerpt ?? undefined,
     thumbnail: prismaPost.thumbnail ?? undefined,
     publishAt: prismaPost.publishAt ?? undefined,

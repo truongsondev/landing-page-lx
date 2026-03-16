@@ -71,23 +71,54 @@ router.post(
   authorize(Role.ADMIN),
   [
     body("userId").isUUID().withMessage("Valid user UUID is required"),
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Name must be less than 200 characters"),
+    body("avatar").optional().isURL().withMessage("Avatar must be a valid URL"),
+    body("saintName")
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Saint name must be less than 200 characters"),
+    body("bio").optional().isString().withMessage("Bio must be a string"),
+    body("dateOfBirth")
+      .optional()
+      .isISO8601()
+      .withMessage("Date of birth must be a valid date"),
+    body("school")
+      .optional()
+      .trim()
+      .isLength({ max: 300 })
+      .withMessage("School must be less than 300 characters"),
     body("studentId")
       .optional()
       .isLength({ max: 50 })
       .withMessage("Student ID must be less than 50 characters"),
-    body("major")
+    body("phoneNumber")
+      .optional()
+      .isLength({ max: 50 })
+      .withMessage("Phone number must be less than 50 characters"),
+    body("address")
+      .optional()
+      .isLength({ max: 500 })
+      .withMessage("Address must be less than 500 characters"),
+    body("position")
       .optional()
       .isLength({ max: 200 })
-      .withMessage("Major must be less than 200 characters"),
-    body("class")
-      .optional()
-      .isLength({ max: 100 })
-      .withMessage("Class must be less than 100 characters"),
+      .withMessage("Position must be less than 200 characters"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const member = await memberUseCase.createMember(req.body);
+      const memberData = {
+        ...req.body,
+        dateOfBirth: req.body.dateOfBirth
+          ? new Date(req.body.dateOfBirth)
+          : undefined,
+      };
+      const member = await memberUseCase.createMember(memberData);
       res.status(201).json(member);
     } catch (error) {
       next(error);
@@ -99,11 +130,59 @@ router.put(
   "/:id",
   authenticate,
   authorize(Role.ADMIN),
-  [param("id").isUUID().withMessage("Invalid member ID")],
+  [
+    param("id").isUUID().withMessage("Invalid member ID"),
+    body("name")
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Name must be less than 200 characters"),
+    body("avatar").optional().isURL().withMessage("Avatar must be a valid URL"),
+    body("saintName")
+      .optional()
+      .trim()
+      .isLength({ max: 200 })
+      .withMessage("Saint name must be less than 200 characters"),
+    body("bio").optional().isString().withMessage("Bio must be a string"),
+    body("dateOfBirth")
+      .optional()
+      .isISO8601()
+      .withMessage("Date of birth must be a valid date"),
+    body("school")
+      .optional()
+      .trim()
+      .isLength({ max: 300 })
+      .withMessage("School must be less than 300 characters"),
+    body("studentId")
+      .optional()
+      .isLength({ max: 50 })
+      .withMessage("Student ID must be less than 50 characters"),
+    body("phoneNumber")
+      .optional()
+      .isLength({ max: 50 })
+      .withMessage("Phone number must be less than 50 characters"),
+    body("address")
+      .optional()
+      .isLength({ max: 500 })
+      .withMessage("Address must be less than 500 characters"),
+    body("position")
+      .optional()
+      .isLength({ max: 200 })
+      .withMessage("Position must be less than 200 characters"),
+  ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const member = await memberUseCase.updateMember(req.params.id, req.body);
+      const updateData = {
+        ...req.body,
+        dateOfBirth: req.body.dateOfBirth
+          ? new Date(req.body.dateOfBirth)
+          : undefined,
+      };
+      const member = await memberUseCase.updateMember(
+        req.params.id,
+        updateData,
+      );
       res.json(member);
     } catch (error) {
       next(error);

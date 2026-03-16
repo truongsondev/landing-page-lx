@@ -11,6 +11,8 @@ export interface Post extends IEntity {
   title: string;
   slug: string;
   content: string;
+  location?: string;
+  eventTime?: Date;
   excerpt?: string;
   thumbnail?: string;
   status: PostStatus;

@@ -29,7 +29,23 @@ export function PostsManagementPage() {
   const remove = useMutation({
     mutationFn: postsService.remove,
     onSuccess: () => {
-      toast.success("Đã xóa bài viết");
+      toast.success("Đã xóa thông báo");
+      qc.invalidateQueries({ queryKey: ["dashboard-posts"] });
+    },
+  });
+
+  const publish = useMutation({
+    mutationFn: postsService.publish,
+    onSuccess: () => {
+      toast.success("Đã publish thông báo");
+      qc.invalidateQueries({ queryKey: ["dashboard-posts"] });
+    },
+  });
+
+  const unpublish = useMutation({
+    mutationFn: postsService.unpublish,
+    onSuccess: () => {
+      toast.success("Đã unpublish thông báo");
       qc.invalidateQueries({ queryKey: ["dashboard-posts"] });
     },
   });
@@ -40,12 +56,12 @@ export function PostsManagementPage() {
   return (
     <div>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold">Quản lý bài viết</h1>
+        <h1 className="text-2xl font-bold">Quản lý thông báo</h1>
         <Link
           to="/dashboard/posts/create"
           className="rounded-md bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
         >
-          Tạo bài viết mới
+          Tạo thông báo mới
         </Link>
       </div>
 
@@ -73,11 +89,12 @@ export function PostsManagementPage() {
         <table className="min-w-full bg-white text-sm">
           <thead className="bg-slate-50">
             <tr>
-              <th className="px-3 py-2 text-left">Title</th>
-              <th className="px-3 py-2 text-left">Category</th>
-              <th className="px-3 py-2 text-left">Author</th>
+              <th className="px-3 py-2 text-left">Tiêu đề</th>
+              <th className="px-3 py-2 text-left">Địa điểm</th>
+              <th className="px-3 py-2 text-left">Thời gian</th>
+              <th className="px-3 py-2 text-left">Người tạo</th>
+              <th className="px-3 py-2 text-left">Ngày tạo</th>
               <th className="px-3 py-2 text-left">Status</th>
-              <th className="px-3 py-2 text-left">Published</th>
               <th className="px-3 py-2 text-left">Actions</th>
             </tr>
           </thead>
@@ -92,17 +109,37 @@ export function PostsManagementPage() {
                     {post.title}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{post.category?.name || "--"}</td>
+                <td className="px-3 py-2">{post.location || "--"}</td>
+                <td className="px-3 py-2">
+                  {post.eventTime
+                    ? dayjs(post.eventTime).format("DD/MM/YYYY HH:mm")
+                    : "--"}
+                </td>
                 <td className="px-3 py-2">{post.author?.email || "--"}</td>
+                <td className="px-3 py-2">
+                  {post.createdAt
+                    ? dayjs(post.createdAt).format("DD/MM/YYYY")
+                    : "--"}
+                </td>
                 <td className="px-3 py-2">
                   <StatusBadge status={post.status} />
                 </td>
                 <td className="px-3 py-2">
-                  {post.publishedAt
-                    ? dayjs(post.publishedAt).format("DD/MM/YYYY")
-                    : "--"}
-                </td>
-                <td className="px-3 py-2">
+                  {post.status === "PUBLISHED" ? (
+                    <button
+                      onClick={() => unpublish.mutate(post.id)}
+                      className="mr-3 text-amber-600"
+                    >
+                      Unpublish
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => publish.mutate(post.id)}
+                      className="mr-3 text-emerald-600"
+                    >
+                      Publish
+                    </button>
+                  )}
                   <button
                     onClick={() => remove.mutate(post.id)}
                     className="text-red-600"

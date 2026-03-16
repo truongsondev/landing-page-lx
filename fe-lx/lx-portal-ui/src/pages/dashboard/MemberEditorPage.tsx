@@ -3,22 +3,45 @@ import { useForm } from "react-hook-form";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
 import { toast } from "sonner";
-import { membersService } from "@/services/members.service";
+import {
+  membersService,
+  type UpsertMemberPayload,
+} from "@/services/members.service";
 
 interface FormData {
   userId: string;
-  email: string;
-  firstName: string;
-  lastName: string;
+  name: string;
+  avatar: string;
+  saintName: string;
+  dateOfBirth: string;
+  school: string;
   studentId: string;
-  phone: string;
+  phoneNumber: string;
   address: string;
-  major: string;
-  className: string;
   position: string;
   status: "ACTIVE" | "INACTIVE" | "ALUMNI";
   bio: string;
 }
+
+const trimOrUndefined = (value?: string) => {
+  const normalized = value?.trim();
+  return normalized ? normalized : undefined;
+};
+
+const toPayload = (values: FormData, isEdit: boolean): UpsertMemberPayload => ({
+  userId: isEdit ? trimOrUndefined(values.userId) : values.userId.trim(),
+  name: trimOrUndefined(values.name),
+  avatar: trimOrUndefined(values.avatar),
+  saintName: trimOrUndefined(values.saintName),
+  bio: trimOrUndefined(values.bio),
+  dateOfBirth: trimOrUndefined(values.dateOfBirth),
+  school: trimOrUndefined(values.school),
+  studentId: trimOrUndefined(values.studentId),
+  phoneNumber: trimOrUndefined(values.phoneNumber),
+  address: trimOrUndefined(values.address),
+  position: trimOrUndefined(values.position),
+  status: values.status,
+});
 
 export function MemberEditorPage() {
   const { id } = useParams();
@@ -41,14 +64,14 @@ export function MemberEditorPage() {
     if (!detail.data) return;
     reset({
       userId: detail.data.userId || "",
-      email: detail.data.email || "",
-      firstName: detail.data.firstName || "",
-      lastName: detail.data.lastName || "",
+      name: detail.data.name || detail.data.fullName || "",
+      avatar: detail.data.avatar || "",
+      saintName: detail.data.saintName || "",
+      dateOfBirth: detail.data.dateOfBirth?.slice(0, 10) || "",
+      school: detail.data.school || "",
       studentId: detail.data.studentId || "",
-      phone: "",
-      address: "",
-      major: "",
-      className: "",
+      phoneNumber: detail.data.phoneNumber || "",
+      address: detail.data.address || "",
       position: detail.data.position || "",
       status: detail.data.status || "ACTIVE",
       bio: detail.data.bio || "",
@@ -64,7 +87,8 @@ export function MemberEditorPage() {
   });
 
   const update = useMutation({
-    mutationFn: (payload: FormData) => membersService.update(id || "", payload),
+    mutationFn: (payload: UpsertMemberPayload) =>
+      membersService.update(id || "", payload),
     onSuccess: () => {
       toast.success("Cập nhật thành viên thành công");
       navigate("/dashboard/members");
@@ -72,11 +96,13 @@ export function MemberEditorPage() {
   });
 
   const onSubmit = async (values: FormData) => {
+    const payload = toPayload(values, isEdit);
+
     if (isEdit) {
-      await update.mutateAsync(values);
+      await update.mutateAsync(payload);
       return;
     }
-    await create.mutateAsync(values);
+    await create.mutateAsync(payload);
   };
 
   return (
@@ -89,28 +115,49 @@ export function MemberEditorPage() {
         className="grid gap-3 md:grid-cols-2"
       >
         <input
-          {...register("userId", { required: true })}
-          placeholder="User ID"
+          {...register("userId", { required: !isEdit })}
+          placeholder="User ID (bắt buộc khi tạo mới)"
           className="rounded-md border border-slate-300 px-3 py-2"
         />
         <input
-          {...register("email")}
-          placeholder="Email"
+          {...register("name")}
+          placeholder="Họ và tên"
           className="rounded-md border border-slate-300 px-3 py-2"
         />
         <input
-          {...register("firstName")}
-          placeholder="Tên"
+          {...register("avatar")}
+          placeholder="Avatar URL"
           className="rounded-md border border-slate-300 px-3 py-2"
         />
         <input
-          {...register("lastName")}
-          placeholder="Họ"
+          {...register("saintName")}
+          placeholder="Tên thánh"
+          className="rounded-md border border-slate-300 px-3 py-2"
+        />
+        <input
+          type="date"
+          {...register("dateOfBirth")}
+          placeholder="Ngày sinh"
+          className="rounded-md border border-slate-300 px-3 py-2"
+        />
+        <input
+          {...register("school")}
+          placeholder="Trường học"
           className="rounded-md border border-slate-300 px-3 py-2"
         />
         <input
           {...register("studentId")}
           placeholder="Mã sinh viên"
+          className="rounded-md border border-slate-300 px-3 py-2"
+        />
+        <input
+          {...register("phoneNumber")}
+          placeholder="Số điện thoại"
+          className="rounded-md border border-slate-300 px-3 py-2"
+        />
+        <input
+          {...register("address")}
+          placeholder="Địa chỉ"
           className="rounded-md border border-slate-300 px-3 py-2"
         />
         <input

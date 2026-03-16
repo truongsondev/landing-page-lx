@@ -52,6 +52,11 @@ model User {
 model Member {
   id          String       @id @default(uuid())
   userId      String       @unique
+  name        String?
+  avatar      String?
+  saintName   String?
+  dateOfBirth DateTime?
+  school      String?
   studentId   String?      @unique
   phoneNumber String?
   address     String?
@@ -87,6 +92,8 @@ model Post {
   title      String
   slug       String     @unique
   content    String     @db.Text
+  location   String?
+  eventTime  DateTime?
   excerpt    String?    @db.Text
   thumbnail  String?
   status     PostStatus @default(DRAFT)

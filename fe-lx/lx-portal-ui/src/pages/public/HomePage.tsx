@@ -94,6 +94,9 @@ function AnimatedCounter({
 export function HomePage() {
   const headline = useAutoHeadline();
   const heroRef = useRef<HTMLElement | null>(null);
+  const [failedActivityImages, setFailedActivityImages] = useState<
+    Record<string, number>
+  >({});
 
   const handleParallaxMove = (event: MouseEvent<HTMLElement>) => {
     const node = heroRef.current;
@@ -145,6 +148,32 @@ export function HomePage() {
     .slice(0, 8);
   const displayActivityImages =
     activityImages.length > 0 ? activityImages : DEFAULT_ACTIVITY_IMAGES;
+  const imageKeyOf = (url: string, idx: number) => `${idx}-${url}`;
+  const getActivityImageSrc = (url: string, idx: number) => {
+    const attempts = failedActivityImages[imageKeyOf(url, idx)] || 0;
+
+    if (attempts === 0) return url;
+    if (attempts <= DEFAULT_ACTIVITY_IMAGES.length) {
+      return DEFAULT_ACTIVITY_IMAGES[
+        (idx + attempts - 1) % DEFAULT_ACTIVITY_IMAGES.length
+      ];
+    }
+
+    return "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+  };
+
+  const handleActivityImageError = (url: string, idx: number) => {
+    const key = imageKeyOf(url, idx);
+    setFailedActivityImages((prev) => {
+      const currentAttempts = prev[key] || 0;
+      const maxAttempts = DEFAULT_ACTIVITY_IMAGES.length + 1;
+      if (currentAttempts >= maxAttempts) return prev;
+      return {
+        ...prev,
+        [key]: currentAttempts + 1,
+      };
+    });
+  };
   const tickerText =
     topPosts.length > 0
       ? topPosts.map((p: Post) => `• ${p.title}`).join("      ")
@@ -340,14 +369,9 @@ export function HomePage() {
               {displayActivityImages.map((url, idx) => (
                 <img
                   key={`${url}-${idx}`}
-                  src={url}
+                  src={getActivityImageSrc(url, idx)}
                   alt="Ảnh hoạt động lưu xá"
-                  onError={(e) => {
-                    e.currentTarget.src =
-                      DEFAULT_ACTIVITY_IMAGES[
-                        idx % DEFAULT_ACTIVITY_IMAGES.length
-                      ];
-                  }}
+                  onError={() => handleActivityImageError(url, idx)}
                   className="h-36 w-full rounded-xl object-cover transition duration-300 hover:scale-[1.02]"
                 />
               ))}
