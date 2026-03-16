@@ -10,7 +10,7 @@ if (!databaseUrl) {
 const parsedDatabaseUrl = new URL(databaseUrl);
 
 const allowPublicKeyRetrievalParam = parsedDatabaseUrl.searchParams.get(
-  "allowPublicKeyRetrieval"
+  "allowPublicKeyRetrieval",
 );
 
 const allowPublicKeyRetrieval =
