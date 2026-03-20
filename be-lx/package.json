@@ -26,7 +26,7 @@
     "cloudinary": "^2.0.0",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
-    "dotenv": "^16.4.5",
+    "dotenv": "^16.6.1",
     "express": "^4.18.2",
     "express-mongo-sanitize": "^2.2.0",
     "express-rate-limit": "^8.3.1",
@@ -50,8 +50,8 @@
     "@types/sanitize-html": "^2.16.1",
     "nodemon": "^3.0.3",
     "prisma": "^7.5.0",
-    "tsc-alias": "^1.8.16",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.16",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.3.3"
   }
