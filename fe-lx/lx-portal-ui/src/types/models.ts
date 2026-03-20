@@ -79,4 +79,5 @@ export interface Activity {
   endDate?: string | null;
   organizer?: User | null;
   organizerId?: string;
+  isRequired?: boolean;
 }
