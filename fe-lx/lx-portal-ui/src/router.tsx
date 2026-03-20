@@ -21,6 +21,7 @@ import { MemberEditorPage } from "@/pages/dashboard/MemberEditorPage";
 import { ActivitiesManagementPage } from "@/pages/dashboard/ActivitiesManagementPage";
 import { ActivityEditorPage } from "@/pages/dashboard/ActivityEditorPage";
 import { ProfilePage } from "@/pages/dashboard/ProfilePage";
+import { MealSignUpPage } from "@/pages/public/MealSignUpPage";
 
 export const router = createBrowserRouter([
   {
@@ -36,6 +37,7 @@ export const router = createBrowserRouter([
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
       { path: "/unauthorized", element: <UnauthorizedPage /> },
+      { path: "/meal-sign-up", element: <MealSignUpPage /> },
     ],
   },
   {

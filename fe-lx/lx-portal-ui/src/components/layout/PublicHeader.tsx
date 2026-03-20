@@ -6,6 +6,7 @@ const menus = [
   { to: "/posts", label: "Thông báo" },
   { to: "/members", label: "Thành viên" },
   { to: "/activities", label: "Hoạt động" },
+  { to: "/meal-sign-up", label: "Lịch nấu" },
 ];
 
 export function PublicHeader() {
