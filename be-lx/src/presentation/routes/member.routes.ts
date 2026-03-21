@@ -23,11 +23,11 @@ router.get(
     query("page")
       .optional()
       .isInt({ min: 1 })
-      .withMessage("Page must be a positive integer"),
+      .withMessage("Trang phải là số nguyên dương"),
     query("limit")
       .optional()
       .isInt({ min: 1, max: 100 })
-      .withMessage("Limit must be between 1 and 100"),
+      .withMessage("Giới hạn phải nằm trong khoảng từ 1 đến 100"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -48,14 +48,14 @@ router.get(
 
 router.get(
   "/:id",
-  [param("id").isUUID().withMessage("Invalid member ID")],
+  [param("id").isUUID().withMessage("ID thành viên không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const member = await memberUseCase.getMemberById(req.params.id);
       // Only show if active
       if (member.status !== MemberStatus.ACTIVE) {
-        return res.status(404).json({ message: "Member not found" });
+        return res.status(404).json({ message: "Không tìm thấy thành viên" });
       }
       res.json(member);
     } catch (error) {
@@ -70,44 +70,47 @@ router.post(
   authenticate,
   authorize(Role.ADMIN),
   [
-    body("userId").isUUID().withMessage("Valid user UUID is required"),
+    body("userId").isUUID().withMessage("ID người dùng không hợp lệ"),
     body("name")
       .optional()
       .trim()
       .isLength({ max: 200 })
-      .withMessage("Name must be less than 200 characters"),
-    body("avatar").optional().isURL().withMessage("Avatar must be a valid URL"),
+      .withMessage("Tên tối đa 200 ký tự"),
+    body("avatar")
+      .optional()
+      .isURL()
+      .withMessage("Ảnh đại diện phải là URL hợp lệ"),
     body("saintName")
       .optional()
       .trim()
       .isLength({ max: 200 })
-      .withMessage("Saint name must be less than 200 characters"),
-    body("bio").optional().isString().withMessage("Bio must be a string"),
+      .withMessage("Tên thánh tối đa 200 ký tự"),
+    body("bio").optional().isString().withMessage("Tiểu sử phải là chuỗi"),
     body("dateOfBirth")
       .optional()
       .isISO8601()
-      .withMessage("Date of birth must be a valid date"),
+      .withMessage("Ngày sinh không hợp lệ"),
     body("school")
       .optional()
       .trim()
       .isLength({ max: 300 })
-      .withMessage("School must be less than 300 characters"),
+      .withMessage("Trường học tối đa 300 ký tự"),
     body("studentId")
       .optional()
       .isLength({ max: 50 })
-      .withMessage("Student ID must be less than 50 characters"),
+      .withMessage("Mã sinh viên tối đa 50 ký tự"),
     body("phoneNumber")
       .optional()
       .isLength({ max: 50 })
-      .withMessage("Phone number must be less than 50 characters"),
+      .withMessage("Số điện thoại tối đa 50 ký tự"),
     body("address")
       .optional()
       .isLength({ max: 500 })
-      .withMessage("Address must be less than 500 characters"),
+      .withMessage("Địa chỉ tối đa 500 ký tự"),
     body("position")
       .optional()
       .isLength({ max: 200 })
-      .withMessage("Position must be less than 200 characters"),
+      .withMessage("Chức vụ tối đa 200 ký tự"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -131,44 +134,47 @@ router.put(
   authenticate,
   authorize(Role.ADMIN),
   [
-    param("id").isUUID().withMessage("Invalid member ID"),
+    param("id").isUUID().withMessage("ID thành viên không hợp lệ"),
     body("name")
       .optional()
       .trim()
       .isLength({ max: 200 })
-      .withMessage("Name must be less than 200 characters"),
-    body("avatar").optional().isURL().withMessage("Avatar must be a valid URL"),
+      .withMessage("Tên tối đa 200 ký tự"),
+    body("avatar")
+      .optional()
+      .isURL()
+      .withMessage("Ảnh đại diện phải là URL hợp lệ"),
     body("saintName")
       .optional()
       .trim()
       .isLength({ max: 200 })
-      .withMessage("Saint name must be less than 200 characters"),
-    body("bio").optional().isString().withMessage("Bio must be a string"),
+      .withMessage("Tên thánh tối đa 200 ký tự"),
+    body("bio").optional().isString().withMessage("Tiểu sử phải là chuỗi"),
     body("dateOfBirth")
       .optional()
       .isISO8601()
-      .withMessage("Date of birth must be a valid date"),
+      .withMessage("Ngày sinh không hợp lệ"),
     body("school")
       .optional()
       .trim()
       .isLength({ max: 300 })
-      .withMessage("School must be less than 300 characters"),
+      .withMessage("Trường học tối đa 300 ký tự"),
     body("studentId")
       .optional()
       .isLength({ max: 50 })
-      .withMessage("Student ID must be less than 50 characters"),
+      .withMessage("Mã sinh viên tối đa 50 ký tự"),
     body("phoneNumber")
       .optional()
       .isLength({ max: 50 })
-      .withMessage("Phone number must be less than 50 characters"),
+      .withMessage("Số điện thoại tối đa 50 ký tự"),
     body("address")
       .optional()
       .isLength({ max: 500 })
-      .withMessage("Address must be less than 500 characters"),
+      .withMessage("Địa chỉ tối đa 500 ký tự"),
     body("position")
       .optional()
       .isLength({ max: 200 })
-      .withMessage("Position must be less than 200 characters"),
+      .withMessage("Chức vụ tối đa 200 ký tự"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -194,7 +200,7 @@ router.delete(
   "/:id",
   authenticate,
   authorize(Role.ADMIN),
-  [param("id").isUUID().withMessage("Invalid member ID")],
+  [param("id").isUUID().withMessage("ID thành viên không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -211,10 +217,10 @@ router.patch(
   authenticate,
   authorize(Role.ADMIN),
   [
-    param("id").isUUID().withMessage("Invalid member ID"),
+    param("id").isUUID().withMessage("ID thành viên không hợp lệ"),
     body("status")
       .isIn(Object.values(MemberStatus))
-      .withMessage("Invalid status value"),
+      .withMessage("Giá trị trạng thái không hợp lệ"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {

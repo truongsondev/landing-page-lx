@@ -39,7 +39,7 @@ export class PostUseCase {
   ): Promise<Post> {
     const existingPost = await this.postRepository.findById(id);
     if (!existingPost) {
-      throw new NotFoundError("Post not found");
+      throw new NotFoundError("Không tìm thấy bài viết");
     }
 
     let thumbnailUrl = data.thumbnail;
@@ -63,7 +63,7 @@ export class PostUseCase {
   async deletePost(id: string): Promise<void> {
     const post = await this.postRepository.findById(id);
     if (!post) {
-      throw new NotFoundError("Post not found");
+      throw new NotFoundError("Không tìm thấy bài viết");
     }
 
     await this.postRepository.delete(id);
@@ -72,7 +72,7 @@ export class PostUseCase {
   async getPostById(id: string): Promise<Post> {
     const post = await this.postRepository.findById(id);
     if (!post) {
-      throw new NotFoundError("Post not found");
+      throw new NotFoundError("Không tìm thấy bài viết");
     }
 
     await this.postRepository.incrementViewCount(id);
@@ -82,7 +82,7 @@ export class PostUseCase {
   async getPostBySlug(slug: string): Promise<Post> {
     const post = await this.postRepository.findBySlug(slug);
     if (!post) {
-      throw new NotFoundError("Post not found");
+      throw new NotFoundError("Không tìm thấy bài viết");
     }
 
     await this.postRepository.incrementViewCount(post.id);

@@ -10,7 +10,10 @@ export function ProtectedRoute({ allowedRoles }: { allowedRoles?: Role[] }) {
     return <Navigate to="/login" replace />;
   }
 
-  if (allowedRoles?.length && (!user || !allowedRoles.includes(user.role))) {
+  if (
+    allowedRoles?.length &&
+    (!user?.role || !allowedRoles.includes(user.role))
+  ) {
     return <Navigate to="/unauthorized" replace />;
   }
 

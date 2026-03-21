@@ -15,7 +15,7 @@ export class SportActivityUseCase {
   ): Promise<SportActivity> {
     // Validate business rules
     if (data.endDate && data.endDate < data.startDate) {
-      throw new ValidationError("End date must be after start date");
+      throw new ValidationError("Ngày kết thúc phải sau ngày bắt đầu");
     }
 
     let thumbnailUrl: string | undefined;
@@ -43,14 +43,14 @@ export class SportActivityUseCase {
   ): Promise<SportActivity> {
     const existingActivity = await this.sportActivityRepository.findById(id);
     if (!existingActivity) {
-      throw new NotFoundError("Sport activity not found");
+      throw new NotFoundError("Không tìm thấy hoạt động thể thao");
     }
 
     // Validate business rules
     const startDate = data.startDate || existingActivity.startDate;
     const endDate = data.endDate || existingActivity.endDate;
     if (endDate && endDate < startDate) {
-      throw new ValidationError("End date must be after start date");
+      throw new ValidationError("Ngày kết thúc phải sau ngày bắt đầu");
     }
 
     let thumbnailUrl = data.thumbnail;
@@ -74,7 +74,7 @@ export class SportActivityUseCase {
   async deleteActivity(id: string): Promise<void> {
     const activity = await this.sportActivityRepository.findById(id);
     if (!activity) {
-      throw new NotFoundError("Sport activity not found");
+      throw new NotFoundError("Không tìm thấy hoạt động thể thao");
     }
 
     await this.sportActivityRepository.delete(id);
@@ -83,7 +83,7 @@ export class SportActivityUseCase {
   async getActivityById(id: string): Promise<SportActivity> {
     const activity = await this.sportActivityRepository.findById(id);
     if (!activity) {
-      throw new NotFoundError("Sport activity not found");
+      throw new NotFoundError("Không tìm thấy hoạt động thể thao");
     }
 
     return activity;

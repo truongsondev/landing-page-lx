@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Xac thuc email thanh cong</title>
+    <style>
+      :root {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+      }
+
+      .card {
+        width: min(560px, 92vw);
+        background: #ffffff;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      }
+
+      h1 {
+        margin: 0 0 10px;
+        font-size: 28px;
+        color: #0f172a;
+      }
+
+      p {
+        margin: 0;
+        color: #334155;
+        line-height: 1.6;
+      }
+
+      .actions {
+        margin-top: 18px;
+      }
+
+      button {
+        border: 0;
+        border-radius: 10px;
+        padding: 10px 16px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #ffffff;
+        background: #2563eb;
+      }
+
+      button:hover {
+        background: #1d4ed8;
+      }
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <h1>Xac thuc email thanh cong</h1>
+      <p>Vui long cho admin duyet tai khoan truoc khi dang nhap.</p>
+      <div class="actions">
+        <button id="go-home" type="button">Ve trang chu</button>
+      </div>
+    </main>
+
+    <script>
+      document.getElementById("go-home").addEventListener("click", function () {
+        // Chuyen huong trong cung tab hien tai va thay the lich su trang verify.
+        window.location.replace("http://localhost:5173/");
+      });
+    </script>
+  </body>
+</html>

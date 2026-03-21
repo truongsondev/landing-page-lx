@@ -18,6 +18,13 @@ export class UserRepository implements IUserRepository {
     return user ? mapUser(user) : null;
   }
 
+  async findByEmailVerificationToken(token: string): Promise<User | null> {
+    const user = await this.prisma.user.findUnique({
+      where: { emailVerificationToken: token },
+    });
+    return user ? mapUser(user) : null;
+  }
+
   async create(
     user: Omit<User, "id" | "createdAt" | "updatedAt">,
   ): Promise<User> {

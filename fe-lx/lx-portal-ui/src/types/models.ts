@@ -14,12 +14,18 @@ export interface User {
   firstName: string;
   lastName: string;
   avatar?: string | null;
-  role: Role;
+  role?: Role;
 }
 
-export interface AuthResponse {
-  token: string;
+export interface LoginResponse {
+  accessToken: string;
+  refreshToken: string;
   user: User;
+}
+
+export interface RefreshTokenResponse {
+  accessToken: string;
+  refreshToken: string;
 }
 
 export interface Category {

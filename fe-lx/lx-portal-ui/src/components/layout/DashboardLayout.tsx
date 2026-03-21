@@ -14,6 +14,11 @@ export function DashboardLayout() {
   const user = useAuthStore((s: AuthState) => s.user);
   const navigate = useNavigate();
 
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login");
+  };
+
   return (
     <div className="min-h-screen bg-slate-100">
       <header className="border-b border-slate-200 bg-white">
@@ -38,8 +43,7 @@ export function DashboardLayout() {
             <span className="text-slate-600">{user?.email}</span>
             <button
               onClick={() => {
-                logout();
-                navigate("/login");
+                void handleLogout();
               }}
               className="rounded-md bg-slate-900 px-3 py-2 text-white"
             >

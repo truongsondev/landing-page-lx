@@ -1,9 +1,28 @@
 import { z } from "zod";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuthStore, type AuthState } from "@/stores/auth.store";
+
+function getServerMessage(error: unknown): string | null {
+  const data = (error as { response?: { data?: unknown } })?.response?.data;
+  if (!data || typeof data !== "object") return null;
+
+  const message = (data as { message?: unknown }).message;
+  if (typeof message === "string" && message.trim()) return message;
+
+  if (Array.isArray(message)) {
+    const firstText = message.find(
+      (item): item is string =>
+        typeof item === "string" && item.trim().length > 0,
+    );
+    return firstText || null;
+  }
+
+  return null;
+}
 
 const schema = z.object({
   email: z.email("Email không hợp lệ"),
@@ -16,8 +35,14 @@ type FormData = z.infer<typeof schema>;
 export function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
+  const isAuthenticated = useAuthStore((s: AuthState) => s.isAuthenticated);
   const login = useAuthStore((s: AuthState) => s.login);
   const loading = useAuthStore((s: AuthState) => s.loading);
+
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    navigate("/", { replace: true });
+  }, [isAuthenticated, navigate]);
 
   const {
     register,
@@ -37,9 +62,15 @@ export function LoginPage() {
       await login(values);
       toast.success("Đăng nhập thành công");
       const redirect =
-        (location.state as { from?: string } | null)?.from || "/dashboard";
+        (location.state as { from?: string } | null)?.from || "/";
       navigate(redirect);
     } catch (error: unknown) {
+      const serverMessage = getServerMessage(error);
+      if (serverMessage) {
+        toast.error(serverMessage);
+        return;
+      }
+
       const status = (error as { response?: { status?: number } })?.response
         ?.status;
       if (status === 401) toast.error("Email hoặc mật khẩu không đúng");

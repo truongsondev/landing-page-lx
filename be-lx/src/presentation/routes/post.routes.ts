@@ -30,13 +30,19 @@ router.get(
     query("page")
       .optional()
       .isInt({ min: 1 })
-      .withMessage("Page must be a positive integer"),
+      .withMessage("Trang phải là số nguyên dương"),
     query("limit")
       .optional()
       .isInt({ min: 1, max: 100 })
-      .withMessage("Limit must be between 1 and 100"),
-    query("categoryId").optional().isUUID().withMessage("Invalid category ID"),
-    query("authorId").optional().isUUID().withMessage("Invalid author ID"),
+      .withMessage("Giới hạn phải nằm trong khoảng từ 1 đến 100"),
+    query("categoryId")
+      .optional()
+      .isUUID()
+      .withMessage("ID danh mục không hợp lệ"),
+    query("authorId")
+      .optional()
+      .isUUID()
+      .withMessage("ID tác giả không hợp lệ"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -59,14 +65,14 @@ router.get(
 
 router.get(
   "/:id",
-  [param("id").isUUID().withMessage("Invalid post ID")],
+  [param("id").isUUID().withMessage("ID bài viết không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const post = await postUseCase.getPostById(req.params.id);
       // Only show if published
       if (post.status !== PostStatus.PUBLISHED) {
-        return res.status(404).json({ message: "Post not found" });
+        return res.status(404).json({ message: "Không tìm thấy bài viết" });
       }
       res.json(post);
     } catch (error) {
@@ -82,7 +88,7 @@ router.get(
       const post = await postUseCase.getPostBySlug(req.params.slug);
       // Only show if published
       if (post.status !== PostStatus.PUBLISHED) {
-        return res.status(404).json({ message: "Post not found" });
+        return res.status(404).json({ message: "Không tìm thấy bài viết" });
       }
       res.json(post);
     } catch (error) {
@@ -102,21 +108,21 @@ router.post(
     body("title")
       .notEmpty()
       .isLength({ max: 500 })
-      .withMessage("Title is required and must be less than 500 characters"),
+      .withMessage("Tiêu đề là bắt buộc và tối đa 500 ký tự"),
     body("slug")
       .notEmpty()
       .isLength({ max: 200 })
-      .withMessage("Slug is required and must be less than 200 characters"),
-    body("content").notEmpty().withMessage("Content is required"),
-    body("categoryId").isUUID().withMessage("Valid category UUID is required"),
+      .withMessage("Slug là bắt buộc và tối đa 200 ký tự"),
+    body("content").notEmpty().withMessage("Nội dung là bắt buộc"),
+    body("categoryId").isUUID().withMessage("ID danh mục không hợp lệ"),
     body("location")
       .notEmpty()
       .isLength({ max: 500 })
-      .withMessage("Location is required and must be less than 500 characters"),
+      .withMessage("Địa điểm là bắt buộc và tối đa 500 ký tự"),
     body("eventTime")
       .notEmpty()
       .isISO8601()
-      .withMessage("Event time is required and must be a valid datetime"),
+      .withMessage("Thời gian sự kiện là bắt buộc và phải đúng định dạng"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -142,15 +148,15 @@ router.put(
   uploadLimiter, // Rate limit uploads
   upload.single("thumbnail"),
   [
-    param("id").isUUID().withMessage("Invalid post ID"),
+    param("id").isUUID().withMessage("ID bài viết không hợp lệ"),
     body("location")
       .optional()
       .isLength({ max: 500 })
-      .withMessage("Location must be less than 500 characters"),
+      .withMessage("Địa điểm tối đa 500 ký tự"),
     body("eventTime")
       .optional()
       .isISO8601()
-      .withMessage("Event time must be a valid datetime"),
+      .withMessage("Thời gian sự kiện phải đúng định dạng"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -177,7 +183,7 @@ router.delete(
   "/:id",
   authenticate,
   authorize(Role.ADMIN),
-  [param("id").isUUID().withMessage("Invalid post ID")],
+  [param("id").isUUID().withMessage("ID bài viết không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -193,7 +199,7 @@ router.patch(
   "/:id/publish",
   authenticate,
   authorize(Role.ADMIN),
-  [param("id").isUUID().withMessage("Invalid post ID")],
+  [param("id").isUUID().withMessage("ID bài viết không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -209,7 +215,7 @@ router.patch(
   "/:id/unpublish",
   authenticate,
   authorize(Role.ADMIN),
-  [param("id").isUUID().withMessage("Invalid post ID")],
+  [param("id").isUUID().withMessage("ID bài viết không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {

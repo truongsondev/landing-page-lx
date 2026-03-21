@@ -15,7 +15,7 @@ export class MemberUseCase {
   async updateMember(id: string, data: Partial<Member>): Promise<Member> {
     const existingMember = await this.memberRepository.findById(id);
     if (!existingMember) {
-      throw new NotFoundError("Member not found");
+      throw new NotFoundError("Không tìm thấy thành viên");
     }
 
     const updatedMember = await this.memberRepository.update(id, data);
@@ -25,7 +25,7 @@ export class MemberUseCase {
   async deleteMember(id: string): Promise<void> {
     const member = await this.memberRepository.findById(id);
     if (!member) {
-      throw new NotFoundError("Member not found");
+      throw new NotFoundError("Không tìm thấy thành viên");
     }
 
     await this.memberRepository.delete(id);
@@ -34,7 +34,7 @@ export class MemberUseCase {
   async getMemberById(id: string): Promise<Member> {
     const member = await this.memberRepository.findById(id);
     if (!member) {
-      throw new NotFoundError("Member not found");
+      throw new NotFoundError("Không tìm thấy thành viên");
     }
 
     return member;
@@ -43,7 +43,7 @@ export class MemberUseCase {
   async getMemberByUserId(userId: string): Promise<Member> {
     const member = await this.memberRepository.findByUserId(userId);
     if (!member) {
-      throw new NotFoundError("Member not found");
+      throw new NotFoundError("Không tìm thấy thành viên");
     }
 
     return member;

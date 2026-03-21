@@ -12,16 +12,20 @@ datasource db {
 
 enum Role {
   ADMIN
-  MODERATOR
   MEMBER
-  GUEST
+}
+
+enum UserAccountStatus {
+  UNVERIFIED
+  PENDING
+  ACTIVE
 }
 
 enum PostStatus {
   DRAFT
   PENDING
   PUBLISHED
-  ARCHIVED
+  ARCHIVED  
 }
 
 enum MemberStatus {
@@ -36,7 +40,12 @@ model User {
   password  String
   firstName String
   lastName  String
-  role      Role     @default(GUEST)
+  role      Role     @default(MEMBER)
+  accountStatus                 UserAccountStatus @default(UNVERIFIED)
+  emailVerified                 Boolean   @default(false)
+  emailVerifiedAt               DateTime?
+  emailVerificationToken        String?   @unique
+  emailVerificationTokenExpiresAt DateTime?
   avatar    String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -45,8 +54,31 @@ model User {
   member          Member?
   posts           Post[]
   sportActivities SportActivity[]
+  refreshTokens   RefreshToken[]
 
   @@map("users")
+}
+
+model RefreshToken {
+  id               String    @id @default(uuid())
+  userId           String
+  tokenHash        String    @unique
+  tokenJti         String    @unique
+  deviceInfo       String?
+  ipAddress        String?
+  expiresAt        DateTime
+  revokedAt        DateTime?
+  revokedReason    String?
+  replacedByTokenId String?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("refresh_tokens")
 }
 
 model Member {

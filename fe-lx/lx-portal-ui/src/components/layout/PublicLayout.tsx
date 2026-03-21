@@ -6,10 +6,13 @@ import { useAuthStore, type AuthState } from "@/stores/auth.store";
 
 export function PublicLayout() {
   const hydrateMe = useAuthStore((s: AuthState) => s.hydrateMe);
+  const isAuthenticated = useAuthStore((s: AuthState) => s.isAuthenticated);
+  const user = useAuthStore((s: AuthState) => s.user);
 
   useEffect(() => {
+    if (!isAuthenticated || user) return;
     void hydrateMe();
-  }, [hydrateMe]);
+  }, [hydrateMe, isAuthenticated, user]);
 
   return (
     <div className="min-h-screen bg-slate-50">

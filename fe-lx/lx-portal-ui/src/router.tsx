@@ -12,6 +12,9 @@ import { ActivitiesPage } from "@/pages/public/ActivitiesPage";
 import { ActivityDetailPage } from "@/pages/public/ActivityDetailPage";
 import { LoginPage } from "@/pages/public/LoginPage";
 import { RegisterPage } from "@/pages/public/RegisterPage";
+import { VerifyEmailPage } from "@/pages/public/VerifyEmailPage";
+import { EmailVerifiedPage } from "@/pages/public/EmailVerifiedPage";
+import { EmailVerifyFailedPage } from "@/pages/public/EmailVerifyFailedPage";
 import { UnauthorizedPage } from "@/pages/public/UnauthorizedPage";
 import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { PostsManagementPage } from "@/pages/dashboard/PostsManagementPage";
@@ -36,6 +39,9 @@ export const router = createBrowserRouter([
       { path: "/activities/:id", element: <ActivityDetailPage /> },
       { path: "/login", element: <LoginPage /> },
       { path: "/register", element: <RegisterPage /> },
+      { path: "/verify-email", element: <VerifyEmailPage /> },
+      { path: "/email-verified", element: <EmailVerifiedPage /> },
+      { path: "/email-verify-failed", element: <EmailVerifyFailedPage /> },
       { path: "/unauthorized", element: <UnauthorizedPage /> },
       { path: "/meal-sign-up", element: <MealSignUpPage /> },
     ],

@@ -33,6 +33,17 @@ docker compose --profile dev up --build
 ```
 
 - App chạy tại `http://localhost:5173`
+- Hot reload trong Docker đã bật polling watcher để hoạt động ổn định trên Windows/macOS.
+- Đảm bảo service `frontend` mount source code từ host vào container (ví dụ: `./:/app`) để thay đổi code được phản ánh ngay.
+- Nên mount riêng `node_modules` trong container để tránh ghi đè bởi host:
+
+```yaml
+services:
+	frontend:
+		volumes:
+			- ./:/app
+			- /app/node_modules
+```
 
 ### Chế độ production (build static + Nginx)
 

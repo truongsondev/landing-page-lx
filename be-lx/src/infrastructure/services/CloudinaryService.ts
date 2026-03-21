@@ -22,7 +22,7 @@ export class CloudinaryService implements ICloudinaryService {
         },
         (error, result) => {
           if (error) return reject(error);
-          if (!result) return reject(new Error("Upload failed"));
+          if (!result) return reject(new Error("Tải ảnh lên thất bại"));
           resolve({
             url: result.secure_url,
             publicId: result.public_id,

@@ -9,7 +9,7 @@ http://localhost:3000/api
 ## Rate Limiting
 
 - **General Limit**: 100 requests per 15 minutes per IP
-- **Authentication Endpoints**: 5 requests per 15 minutes per IP
+- **Authentication Endpoints**: 20 requests per 1 minute per IP
 - **Upload Endpoints**: 10 uploads per 15 minutes per IP
 
 Rate limit information is returned in response headers:
@@ -41,11 +41,11 @@ All responses include security headers:
 
 ### Register
 
-Đăng ký tài khoản mới.
+Đăng ký tài khoản mới theo flow xác thực email và duyệt bởi admin.
 
 **Endpoint:** `POST /auth/register`
 
-**Rate Limit:** 5 requests per 15 minutes per IP
+**Rate Limit:** 20 requests per 1 minute per IP
 
 **Request Body:**
 
@@ -61,14 +61,22 @@ All responses include security headers:
 **Validation Rules:**
 
 - `email`: Valid email format, automatically normalized to lowercase
-- `password`: Minimum 8 characters, must contain:
+- `password`: Minimum 6 characters, must contain:
   - At least one uppercase letter (A-Z)
   - At least one lowercase letter (a-z)
   - At least one number (0-9)
   - At least one special character (@$!%\*?&)
 - `firstName`: Required, max 100 characters
 - `lastName`: Required, max 100 characters
-- **Note**: Role is automatically set to `MEMBER` for new registrations. Only admins can assign other roles via database.
+- `role`: Không nhận từ request body
+
+**Business Rules:**
+
+- Role mặc định khi đăng ký: `MEMBER`
+- Trạng thái account khi tạo mới: `UNVERIFIED`
+- Hệ thống gửi email chứa link verify, hiệu lực 5 phút
+- Verify email thành công sẽ chuyển trạng thái sang `PENDING`
+- User chỉ đăng nhập được khi admin duyệt sang `ACTIVE`
 
 **Response:** `201 Created`
 
@@ -79,14 +87,36 @@ All responses include security headers:
     "email": "user@example.com",
     "firstName": "Nguyen",
     "lastName": "Van A",
-    "role": "GUEST",
+    "role": "MEMBER",
+    "accountStatus": "UNVERIFIED",
+    "emailVerified": false,
+    "emailVerifiedAt": null,
     "avatar": null,
     "createdAt": "2024-03-12T10:00:00.000Z",
     "updatedAt": "2024-03-12T10:00:00.000Z"
   },
-  "token": "jwt-token-here"
+  "message": "Registration successful. Please check your email to verify your account."
 }
 ```
+
+**Error Responses:**
+
+- `400 Bad Request`: Validation failed
+- `409 Conflict`: Email already registered
+- `429 Too Many Requests`: Too many login/registration attempts
+
+**Related Endpoints in Register Flow:**
+
+- `GET /auth/verify-email?token=...`: Xác thực email, chuyển `UNVERIFIED` -> `PENDING`, sau đó redirect về frontend
+- `PATCH /auth/users/:id/activate` (ADMIN): Duyệt account, chuyển `PENDING` -> `ACTIVE`
+
+**Verify Email Redirect:**
+
+- Success redirect URL: `EMAIL_VERIFY_SUCCESS_URL` (default: `${APP_URL}/email-verified`)
+- Failed redirect URL: `EMAIL_VERIFY_FAILED_URL` (default: `${APP_URL}/email-verify-failed`)
+- Query params frontend có thể đọc:
+  - `status`: `success` hoặc `error`
+  - `message`: thông báo kết quả verify
 
 ### Login
 
@@ -94,7 +124,7 @@ All responses include security headers:
 
 **Endpoint:** `POST /auth/login`
 
-**Rate Limit:** 5 requests per 15 minutes per IP
+**Rate Limit:** 20 requests per 1 minute per IP
 
 **Request Body:**
 
@@ -110,16 +140,70 @@ All responses include security headers:
 ```json
 {
   "user": {
-    "id": "uuid",
-    "email": "user@example.com",
     "firstName": "Nguyen",
     "lastName": "Van A",
-    "role": "MEMBER",
-    "avatar": "https://cloudinary.com/...",
-    "createdAt": "2024-03-12T10:00:00.000Z",
-    "updatedAt": "2024-03-12T10:00:00.000Z"
+    "email": "user@example.com",
+    "avatar": "https://cloudinary.com/..."
   },
-  "token": "jwt-token-here"
+  "accessToken": "access-token-here",
+  "refreshToken": "refresh-token-here"
+}
+```
+
+### Refresh Token
+
+Cấp mới access token bằng refresh token hiện tại. Endpoint này cũng xoay vòng refresh token (rotate), token cũ sẽ bị thu hồi.
+
+**Endpoint:** `POST /auth/refresh-token`
+
+**Rate Limit:** 20 requests per 1 minute per IP
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "refresh-token-here"
+}
+```
+
+**Validation Rules:**
+
+- `refreshToken`: Bắt buộc
+
+**Response:** `200 OK`
+
+```json
+{
+  "accessToken": "new-access-token-here",
+  "refreshToken": "new-refresh-token-here"
+}
+```
+
+**Error Responses:**
+
+- `400 Bad Request`: Thiếu refresh token
+- `401 Unauthorized`: Refresh token không hợp lệ/đã hết hạn/đã bị thu hồi
+- `429 Too Many Requests`: Quá nhiều yêu cầu
+
+### Logout
+
+Thu hồi refresh token hiện tại của phiên đăng nhập.
+
+**Endpoint:** `POST /auth/logout`
+
+**Request Body:**
+
+```json
+{
+  "refreshToken": "refresh-token-here"
+}
+```
+
+**Response:** `200 OK`
+
+```json
+{
+  "message": "Đăng xuất thành công"
 }
 ```
 
@@ -671,7 +755,7 @@ Authorization: Bearer {token}
     },
     {
       "field": "password",
-      "message": "Password must be at least 8 characters with uppercase, lowercase, number and special character"
+      "message": "Password must be at least 6 characters with uppercase, lowercase, number and special character"
     }
   ]
 }
@@ -756,7 +840,7 @@ Authorization: Bearer {your-jwt-token}
 
 - JWT tokens expire after 7 days
 - Tokens are signed with HS256 algorithm
-- All authentication endpoints are rate-limited (5 requests per 15 minutes)
+- All authentication endpoints are rate-limited (20 requests per 1 minute)
 - Passwords are hashed using bcrypt with 10 rounds
 - Failed login attempts are logged
 

@@ -29,11 +29,11 @@ router.get(
     query("page")
       .optional()
       .isInt({ min: 1 })
-      .withMessage("Page must be a positive integer"),
+      .withMessage("Trang phải là số nguyên dương"),
     query("limit")
       .optional()
       .isInt({ min: 1, max: 100 })
-      .withMessage("Limit must be between 1 and 100"),
+      .withMessage("Giới hạn phải nằm trong khoảng từ 1 đến 100"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -52,7 +52,7 @@ router.get(
 
 router.get(
   "/:id",
-  [param("id").isUUID().withMessage("Invalid activity ID")],
+  [param("id").isUUID().withMessage("ID hoạt động không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
@@ -70,23 +70,23 @@ router.get(
 router.post(
   "/",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN, Role.MEMBER),
   uploadLimiter, // Rate limit uploads
   upload.single("thumbnail"),
   [
     body("name")
       .notEmpty()
       .isLength({ max: 500 })
-      .withMessage("Name is required and must be less than 500 characters"),
-    body("startDate").isISO8601().withMessage("Valid start date is required"),
+      .withMessage("Tên hoạt động là bắt buộc và tối đa 500 ký tự"),
+    body("startDate").isISO8601().withMessage("Ngày bắt đầu không hợp lệ"),
     body("endDate")
       .optional()
       .isISO8601()
-      .withMessage("Valid end date is required"),
+      .withMessage("Ngày kết thúc không hợp lệ"),
     body("location")
       .optional()
       .isLength({ max: 500 })
-      .withMessage("Location must be less than 500 characters"),
+      .withMessage("Địa điểm tối đa 500 ký tự"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -111,19 +111,19 @@ router.post(
 router.put(
   "/:id",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
+  authorize(Role.ADMIN, Role.MEMBER),
   uploadLimiter, // Rate limit uploads
   upload.single("thumbnail"),
   [
-    param("id").isUUID().withMessage("Invalid activity ID"),
+    param("id").isUUID().withMessage("ID hoạt động không hợp lệ"),
     body("startDate")
       .optional()
       .isISO8601()
-      .withMessage("Valid start date is required"),
+      .withMessage("Ngày bắt đầu không hợp lệ"),
     body("endDate")
       .optional()
       .isISO8601()
-      .withMessage("Valid end date is required"),
+      .withMessage("Ngày kết thúc không hợp lệ"),
   ],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -150,8 +150,8 @@ router.put(
 router.delete(
   "/:id",
   authenticate,
-  authorize(Role.ADMIN, Role.MODERATOR),
-  [param("id").isUUID().withMessage("Invalid activity ID")],
+  authorize(Role.ADMIN, Role.MEMBER),
+  [param("id").isUUID().withMessage("ID hoạt động không hợp lệ")],
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
