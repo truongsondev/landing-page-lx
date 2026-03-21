@@ -1,12 +1,17 @@
 import { SportActivity } from "@domain/entities/SportActivity";
+import { IImageRepository } from "@domain/repositories/IImageRepository";
 import { ISportActivityRepository } from "@domain/repositories/ISportActivityRepository";
-import { ICloudinaryService } from "@domain/services/ICloudinaryService";
+import {
+  CloudinaryUploadResult,
+  ICloudinaryService,
+} from "@domain/services/ICloudinaryService";
 import { NotFoundError, ValidationError } from "@domain/errors/AppError";
 
 export class SportActivityUseCase {
   constructor(
     private sportActivityRepository: ISportActivityRepository,
     private cloudinaryService: ICloudinaryService,
+    private imageRepository: IImageRepository,
   ) {}
 
   async createActivity(
@@ -19,6 +24,8 @@ export class SportActivityUseCase {
     }
 
     let thumbnailUrl: string | undefined;
+    let uploadedPublicId: string | undefined;
+    let uploadedMetadata: CloudinaryUploadResult | undefined;
 
     if (thumbnail) {
       const uploadResult = await this.cloudinaryService.uploadImage(
@@ -26,14 +33,42 @@ export class SportActivityUseCase {
         "activities",
       );
       thumbnailUrl = uploadResult.url;
+      uploadedPublicId = uploadResult.publicId;
+      uploadedMetadata = uploadResult;
     }
 
-    const activity = await this.sportActivityRepository.create({
-      ...data,
-      thumbnail: thumbnailUrl,
-    });
+    try {
+      const activity = await this.sportActivityRepository.create({
+        ...data,
+        thumbnail: thumbnailUrl,
+      });
 
-    return activity;
+      if (uploadedPublicId && thumbnailUrl) {
+        try {
+          await this.imageRepository.replaceForActivity(activity.id, {
+            url: thumbnailUrl,
+            publicId: uploadedPublicId,
+            resourceType: uploadedMetadata?.resourceType,
+            format: uploadedMetadata?.format,
+            width: uploadedMetadata?.width,
+            height: uploadedMetadata?.height,
+            bytes: uploadedMetadata?.bytes,
+            description: "activity-thumbnail",
+          });
+        } catch (error) {
+          await this.cloudinaryService.deleteImage(uploadedPublicId);
+          await this.sportActivityRepository.delete(activity.id);
+          throw error;
+        }
+      }
+
+      return activity;
+    } catch (error) {
+      if (uploadedPublicId) {
+        await this.cloudinaryService.deleteImage(uploadedPublicId);
+      }
+      throw error;
+    }
   }
 
   async updateActivity(
@@ -54,6 +89,10 @@ export class SportActivityUseCase {
     }
 
     let thumbnailUrl = data.thumbnail;
+    let newPublicId: string | undefined;
+    let newUploadMetadata: CloudinaryUploadResult | undefined;
+    const existingImages = await this.imageRepository.findByActivityId(id);
+    const oldPublicIds = existingImages.map((img) => img.publicId);
 
     if (thumbnail) {
       const uploadResult = await this.cloudinaryService.uploadImage(
@@ -61,14 +100,42 @@ export class SportActivityUseCase {
         "activities",
       );
       thumbnailUrl = uploadResult.url;
+      newPublicId = uploadResult.publicId;
+      newUploadMetadata = uploadResult;
     }
 
-    const updatedActivity = await this.sportActivityRepository.update(id, {
-      ...data,
-      thumbnail: thumbnailUrl,
-    });
+    try {
+      const updatedActivity = await this.sportActivityRepository.update(id, {
+        ...data,
+        thumbnail: thumbnailUrl,
+      });
 
-    return updatedActivity;
+      if (newPublicId && thumbnailUrl) {
+        await this.imageRepository.replaceForActivity(id, {
+          url: thumbnailUrl,
+          publicId: newPublicId,
+          resourceType: newUploadMetadata?.resourceType,
+          format: newUploadMetadata?.format,
+          width: newUploadMetadata?.width,
+          height: newUploadMetadata?.height,
+          bytes: newUploadMetadata?.bytes,
+          description: "activity-thumbnail",
+        });
+
+        await Promise.all(
+          oldPublicIds
+            .filter((publicId) => publicId !== newPublicId)
+            .map((publicId) => this.cloudinaryService.deleteImage(publicId)),
+        );
+      }
+
+      return updatedActivity;
+    } catch (error) {
+      if (newPublicId) {
+        await this.cloudinaryService.deleteImage(newPublicId);
+      }
+      throw error;
+    }
   }
 
   async deleteActivity(id: string): Promise<void> {
@@ -76,6 +143,13 @@ export class SportActivityUseCase {
     if (!activity) {
       throw new NotFoundError("Không tìm thấy hoạt động thể thao");
     }
+
+    const existingImages = await this.imageRepository.findByActivityId(id);
+    await Promise.all(
+      existingImages.map((img) =>
+        this.cloudinaryService.deleteImage(img.publicId),
+      ),
+    );
 
     await this.sportActivityRepository.delete(id);
   }

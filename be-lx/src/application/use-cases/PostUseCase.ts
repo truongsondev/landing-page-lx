@@ -1,12 +1,17 @@
 import { Post, PostStatus } from "@domain/entities/Post";
+import { IImageRepository } from "@domain/repositories/IImageRepository";
 import { IPostRepository } from "@domain/repositories/IPostRepository";
-import { ICloudinaryService } from "@domain/services/ICloudinaryService";
+import {
+  CloudinaryUploadResult,
+  ICloudinaryService,
+} from "@domain/services/ICloudinaryService";
 import { NotFoundError, ValidationError } from "@domain/errors/AppError";
 
 export class PostUseCase {
   constructor(
     private postRepository: IPostRepository,
     private cloudinaryService: ICloudinaryService,
+    private imageRepository: IImageRepository,
   ) {}
 
   async createPost(
@@ -14,6 +19,8 @@ export class PostUseCase {
     thumbnail?: Express.Multer.File,
   ): Promise<Post> {
     let thumbnailUrl: string | undefined;
+    let uploadedPublicId: string | undefined;
+    let uploadedMetadata: CloudinaryUploadResult | undefined;
 
     if (thumbnail) {
       const uploadResult = await this.cloudinaryService.uploadImage(
@@ -21,15 +28,43 @@ export class PostUseCase {
         "posts",
       );
       thumbnailUrl = uploadResult.url;
+      uploadedPublicId = uploadResult.publicId;
+      uploadedMetadata = uploadResult;
     }
 
-    const post = await this.postRepository.create({
-      ...data,
-      thumbnail: thumbnailUrl,
-      viewCount: 0,
-    });
+    try {
+      const post = await this.postRepository.create({
+        ...data,
+        thumbnail: thumbnailUrl,
+        viewCount: 0,
+      });
 
-    return post;
+      if (uploadedPublicId && thumbnailUrl) {
+        try {
+          await this.imageRepository.replaceForPost(post.id, {
+            url: thumbnailUrl,
+            publicId: uploadedPublicId,
+            resourceType: uploadedMetadata?.resourceType,
+            format: uploadedMetadata?.format,
+            width: uploadedMetadata?.width,
+            height: uploadedMetadata?.height,
+            bytes: uploadedMetadata?.bytes,
+            description: "post-thumbnail",
+          });
+        } catch (error) {
+          await this.cloudinaryService.deleteImage(uploadedPublicId);
+          await this.postRepository.delete(post.id);
+          throw error;
+        }
+      }
+
+      return post;
+    } catch (error) {
+      if (uploadedPublicId) {
+        await this.cloudinaryService.deleteImage(uploadedPublicId);
+      }
+      throw error;
+    }
   }
 
   async updatePost(
@@ -43,6 +78,10 @@ export class PostUseCase {
     }
 
     let thumbnailUrl = data.thumbnail;
+    let newPublicId: string | undefined;
+    let newUploadMetadata: CloudinaryUploadResult | undefined;
+    const existingImages = await this.imageRepository.findByPostId(id);
+    const oldPublicIds = existingImages.map((img) => img.publicId);
 
     if (thumbnail) {
       const uploadResult = await this.cloudinaryService.uploadImage(
@@ -50,14 +89,42 @@ export class PostUseCase {
         "posts",
       );
       thumbnailUrl = uploadResult.url;
+      newPublicId = uploadResult.publicId;
+      newUploadMetadata = uploadResult;
     }
 
-    const updatedPost = await this.postRepository.update(id, {
-      ...data,
-      thumbnail: thumbnailUrl,
-    });
+    try {
+      const updatedPost = await this.postRepository.update(id, {
+        ...data,
+        thumbnail: thumbnailUrl,
+      });
 
-    return updatedPost;
+      if (newPublicId && thumbnailUrl) {
+        await this.imageRepository.replaceForPost(id, {
+          url: thumbnailUrl,
+          publicId: newPublicId,
+          resourceType: newUploadMetadata?.resourceType,
+          format: newUploadMetadata?.format,
+          width: newUploadMetadata?.width,
+          height: newUploadMetadata?.height,
+          bytes: newUploadMetadata?.bytes,
+          description: "post-thumbnail",
+        });
+
+        await Promise.all(
+          oldPublicIds
+            .filter((publicId) => publicId !== newPublicId)
+            .map((publicId) => this.cloudinaryService.deleteImage(publicId)),
+        );
+      }
+
+      return updatedPost;
+    } catch (error) {
+      if (newPublicId) {
+        await this.cloudinaryService.deleteImage(newPublicId);
+      }
+      throw error;
+    }
   }
 
   async deletePost(id: string): Promise<void> {
@@ -65,6 +132,13 @@ export class PostUseCase {
     if (!post) {
       throw new NotFoundError("Không tìm thấy bài viết");
     }
+
+    const existingImages = await this.imageRepository.findByPostId(id);
+    await Promise.all(
+      existingImages.map((img) =>
+        this.cloudinaryService.deleteImage(img.publicId),
+      ),
+    );
 
     await this.postRepository.delete(id);
   }

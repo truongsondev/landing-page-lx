@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { body, query, param } from "express-validator";
 import { PostUseCase } from "@application/use-cases/PostUseCase";
 import { PostRepository } from "@infrastructure/repositories/PostRepository";
+import { ImageRepository } from "@infrastructure/repositories/ImageRepository";
 import { CloudinaryService } from "@infrastructure/services/CloudinaryService";
 import prisma from "@infrastructure/database/prisma";
 import {
@@ -20,8 +21,13 @@ import { PostStatus } from "@domain/entities/Post";
 
 const router = Router();
 const postRepository = new PostRepository(prisma);
+const imageRepository = new ImageRepository(prisma);
 const cloudinaryService = new CloudinaryService();
-const postUseCase = new PostUseCase(postRepository, cloudinaryService);
+const postUseCase = new PostUseCase(
+  postRepository,
+  cloudinaryService,
+  imageRepository,
+);
 
 // Public routes - only show PUBLISHED posts
 router.get(

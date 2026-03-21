@@ -160,6 +160,64 @@ router.get(
 );
 
 router.patch(
+  "/users/:id/approve",
+  authenticate,
+  authorize(Role.ADMIN),
+  [param("id").isUUID().withMessage("ID người dùng không hợp lệ")],
+  validate,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const result = await authUseCase.approveMember(req.params.id);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/users/:id/block",
+  authenticate,
+  authorize(Role.ADMIN),
+  [param("id").isUUID().withMessage("ID người dùng không hợp lệ")],
+  validate,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const result = await authUseCase.blockMember(req.params.id);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
+  "/users/:id/reject",
+  authenticate,
+  authorize(Role.ADMIN),
+  [
+    param("id").isUUID().withMessage("ID người dùng không hợp lệ"),
+    body("reason")
+      .trim()
+      .notEmpty()
+      .isLength({ max: 1000 })
+      .withMessage("Lý do từ chối là bắt buộc và tối đa 1000 ký tự"),
+  ],
+  validate,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const result = await authUseCase.rejectMember(
+        req.params.id,
+        req.body.reason,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.patch(
   "/users/:id/activate",
   authenticate,
   authorize(Role.ADMIN),
@@ -167,7 +225,7 @@ router.patch(
   validate,
   async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
-      const result = await authUseCase.activateUser(req.params.id);
+      const result = await authUseCase.approveMember(req.params.id);
       res.json(result);
     } catch (error) {
       next(error);

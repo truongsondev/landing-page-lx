@@ -19,6 +19,7 @@ enum UserAccountStatus {
   UNVERIFIED
   PENDING
   ACTIVE
+  INACTIVE
 }
 
 enum PostStatus {
@@ -32,6 +33,13 @@ enum MemberStatus {
   ACTIVE
   INACTIVE
   ALUMNI
+}
+
+enum Position {
+  BOSS   
+  MANAGER
+  SUBBOSS
+  MEMBER
 }
 
 model User {
@@ -84,16 +92,11 @@ model RefreshToken {
 model Member {
   id          String       @id @default(uuid())
   userId      String       @unique
-  name        String?
-  avatar      String?
   saintName   String?
   dateOfBirth DateTime?
   school      String?
-  studentId   String?      @unique
   phoneNumber String?
   address     String?
-  joinDate    DateTime     @default(now())
-  status      MemberStatus @default(ACTIVE)
   bio         String?      @db.Text
   position    String?
   createdAt   DateTime     @default(now())
@@ -152,6 +155,11 @@ model Image {
   id          String   @id @default(uuid())
   url         String
   publicId    String
+  resourceType String?
+  format      String?
+  width       Int?
+  height      Int?
+  bytes       Int?
   postId      String?
   activityId  String?
   description String?

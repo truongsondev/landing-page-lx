@@ -1,10 +1,10 @@
-import { PrismaClient } from "@prisma/client";
 import { User } from "@domain/entities/User";
 import { IUserRepository } from "@domain/repositories/IUserRepository";
 import { mapUser } from "@infrastructure/mappers/prismaMapper";
+import prismaClient from "@infrastructure/database/prisma";
 
 export class UserRepository implements IUserRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: typeof prismaClient) {}
 
   async findById(id: string): Promise<User | null> {
     const user = await this.prisma.user.findUnique({ where: { id } });
@@ -33,9 +33,12 @@ export class UserRepository implements IUserRepository {
   }
 
   async update(id: string, user: Partial<User>): Promise<User> {
+    // Keep input flexible while preserving compatibility with Prisma generated enum types.
+    const data: any = { ...user };
+
     const updated = await this.prisma.user.update({
       where: { id },
-      data: user,
+      data,
     });
     return mapUser(updated);
   }

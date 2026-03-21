@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import { Prisma } from "@prisma/client";
+import multer from "multer";
 import { AppError } from "@domain/errors/AppError";
 
 export const errorHandler = (
@@ -15,6 +16,19 @@ export const errorHandler = (
     return res.status(err.statusCode).json({
       message: err.message,
       ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+    });
+  }
+
+  // Handle multer upload errors
+  if (err instanceof multer.MulterError) {
+    if (err.code === "LIMIT_FILE_SIZE") {
+      return res.status(413).json({
+        message: "Kích thước ảnh vượt quá giới hạn 5MB",
+      });
+    }
+
+    return res.status(400).json({
+      message: err.message,
     });
   }
 
@@ -110,6 +124,16 @@ export const errorHandler = (
     err.message.includes("Thiếu mã xác thực")
   ) {
     return res.status(400).json({ message: err.message });
+  }
+
+  if (
+    err.message.includes("cloudinary") ||
+    err.message.includes("Cloudinary") ||
+    err.message.includes("Tải ảnh lên thất bại")
+  ) {
+    return res.status(502).json({
+      message: "Dịch vụ xử lý ảnh tạm thời không khả dụng",
+    });
   }
 
   // Default server error

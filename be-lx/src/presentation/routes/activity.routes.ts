@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from "express";
 import { body, query, param } from "express-validator";
 import { SportActivityUseCase } from "@application/use-cases/SportActivityUseCase";
 import { SportActivityRepository } from "@infrastructure/repositories/SportActivityRepository";
+import { ImageRepository } from "@infrastructure/repositories/ImageRepository";
 import { CloudinaryService } from "@infrastructure/services/CloudinaryService";
 import prisma from "@infrastructure/database/prisma";
 import {
@@ -16,10 +17,12 @@ import { Role } from "@domain/entities/User";
 
 const router = Router();
 const sportActivityRepository = new SportActivityRepository(prisma);
+const imageRepository = new ImageRepository(prisma);
 const cloudinaryService = new CloudinaryService();
 const sportActivityUseCase = new SportActivityUseCase(
   sportActivityRepository,
   cloudinaryService,
+  imageRepository,
 );
 
 // Public routes

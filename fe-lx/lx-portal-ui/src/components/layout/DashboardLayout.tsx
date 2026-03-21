@@ -6,7 +6,6 @@ const menus = [
   { to: "/dashboard/posts", label: "Thông báo" },
   { to: "/dashboard/members", label: "Thành viên" },
   { to: "/dashboard/activities", label: "Hoạt động" },
-  { to: "/dashboard/profile", label: "Hồ sơ" },
 ];
 
 export function DashboardLayout() {

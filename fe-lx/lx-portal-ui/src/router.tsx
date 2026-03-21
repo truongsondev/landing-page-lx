@@ -20,10 +20,8 @@ import { DashboardPage } from "@/pages/dashboard/DashboardPage";
 import { PostsManagementPage } from "@/pages/dashboard/PostsManagementPage";
 import { PostEditorPage } from "@/pages/dashboard/PostEditorPage";
 import { MembersManagementPage } from "@/pages/dashboard/MembersManagementPage";
-import { MemberEditorPage } from "@/pages/dashboard/MemberEditorPage";
 import { ActivitiesManagementPage } from "@/pages/dashboard/ActivitiesManagementPage";
 import { ActivityEditorPage } from "@/pages/dashboard/ActivityEditorPage";
-import { ProfilePage } from "@/pages/dashboard/ProfilePage";
 import { MealSignUpPage } from "@/pages/public/MealSignUpPage";
 
 export const router = createBrowserRouter([
@@ -47,53 +45,34 @@ export const router = createBrowserRouter([
     ],
   },
   {
-    element: <ProtectedRoute />,
+    element: <ProtectedRoute allowedRoles={["ADMIN"]} />,
     children: [
       {
         element: <DashboardLayout />,
         children: [
           { path: "/dashboard", element: <DashboardPage /> },
+          { path: "/dashboard/posts", element: <PostsManagementPage /> },
+          { path: "/dashboard/posts/create", element: <PostEditorPage /> },
           {
-            element: <ProtectedRoute allowedRoles={["ADMIN", "MODERATOR"]} />,
-            children: [
-              { path: "/dashboard/posts", element: <PostsManagementPage /> },
-              { path: "/dashboard/posts/create", element: <PostEditorPage /> },
-              {
-                path: "/dashboard/posts/:id/edit",
-                element: <PostEditorPage />,
-              },
-              {
-                path: "/dashboard/activities",
-                element: <ActivitiesManagementPage />,
-              },
-              {
-                path: "/dashboard/activities/create",
-                element: <ActivityEditorPage />,
-              },
-              {
-                path: "/dashboard/activities/:id/edit",
-                element: <ActivityEditorPage />,
-              },
-            ],
+            path: "/dashboard/posts/:id/edit",
+            element: <PostEditorPage />,
           },
           {
-            element: <ProtectedRoute allowedRoles={["ADMIN"]} />,
-            children: [
-              {
-                path: "/dashboard/members",
-                element: <MembersManagementPage />,
-              },
-              {
-                path: "/dashboard/members/create",
-                element: <MemberEditorPage />,
-              },
-              {
-                path: "/dashboard/members/:id/edit",
-                element: <MemberEditorPage />,
-              },
-            ],
+            path: "/dashboard/activities",
+            element: <ActivitiesManagementPage />,
           },
-          { path: "/dashboard/profile", element: <ProfilePage /> },
+          {
+            path: "/dashboard/activities/create",
+            element: <ActivityEditorPage />,
+          },
+          {
+            path: "/dashboard/activities/:id/edit",
+            element: <ActivityEditorPage />,
+          },
+          {
+            path: "/dashboard/members",
+            element: <MembersManagementPage />,
+          },
         ],
       },
     ],

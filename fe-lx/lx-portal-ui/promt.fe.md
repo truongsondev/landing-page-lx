@@ -20,57 +20,11 @@ Bạn có khả năng:
 
 # Scope
 
-Phát triển **Dashboard Web Application** dùng để quản lý hệ thống.
-
-Dashboard bao gồm các chức năng:
-
-## 1. Quản lý thành viên
-
-Các chức năng cần xây dựng:
-
-- Xem danh sách thành viên
-- Thêm thành viên
-- Sửa thông tin thành viên
-- Xóa thành viên
-
-### Thông tin thành viên có thể bao gồm
-
-- ID
-- Tên
-- Email
-- Vai trò
-- Trạng thái
-- Ngày tạo
-
----
-
-## 2. Quản lý thông báo
-
-Các chức năng cần xây dựng:
-
-- Xem danh sách thông báo
-- Thêm thông báo
-- Chỉnh sửa thông báo
-- Xóa thông báo
-
-### Thông tin thông báo bao gồm
-
-- Tiêu đề
-- Nội dung
-- Người tạo
-- Ngày tạo
-- Trạng thái hiển thị
-
----
+Viết UI cho trang chỉnh sửa thông tin cá nhân dành cho 1 user khi click vào Thông tin cá nhân
 
 # Instruction
 
-## 1. Phân tích source code hiện có
-
-- Đọc và hiểu cấu trúc project
-- Xác định các module liên quan đến dashboard
-- Xác định các API cần sử dụng
-- Xác định các component có thể tái sử dụng
+## 1. Phân tích API được sử dụng trong case này
 
 ## 2. Đề xuất các gợi ý để best practice hơn cho project
 

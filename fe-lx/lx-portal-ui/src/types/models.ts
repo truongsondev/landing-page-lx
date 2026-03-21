@@ -1,4 +1,5 @@
 export type Role = "ADMIN" | "MODERATOR" | "MEMBER";
+export type AccountStatus = "UNVERIFIED" | "PENDING" | "ACTIVE" | "REJECTED";
 
 export interface ApiListResponse<T> {
   data: T[];
@@ -14,6 +15,7 @@ export interface User {
   firstName: string;
   lastName: string;
   avatar?: string | null;
+  accountStatus?: AccountStatus;
   role?: Role;
 }
 
@@ -72,6 +74,22 @@ export interface Member {
   status?: "ACTIVE" | "INACTIVE" | "ALUMNI";
   joinDate?: string | null;
   createdAt?: string;
+}
+
+export interface AdminMemberUser {
+  id: string;
+  email: string;
+  firstName: string;
+  lastName: string;
+  accountStatus: AccountStatus;
+  avatar?: string | null;
+}
+
+export interface AdminMembersListResponse {
+  members: AdminMemberUser[];
+  total: number;
+  page: number;
+  totalPages: number;
 }
 
 export interface Activity {

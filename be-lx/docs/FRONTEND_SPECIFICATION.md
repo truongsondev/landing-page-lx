@@ -4,6 +4,10 @@
 
 Website Lưu Xá là nền tảng quản lý và giới thiệu thông tin về ký túc xá dành cho sinh viên, bao gồm quản lý thành viên, đăng bài viết/thông báo, và tổ chức các hoạt động thể thao.
 
+## Tai lieu FE bo sung
+
+- Huong dan tich hop upload anh Cloudinary: docs/CLOUDINARY_FE_GUIDE.md
+
 ## Công Nghệ Đề Xuất
 
 ### Framework & Libraries

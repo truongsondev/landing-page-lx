@@ -4,4 +4,10 @@ export interface IEmailService {
     firstName: string;
     verificationLink: string;
   }): Promise<void>;
+
+  sendMemberRejectionEmail(data: {
+    email: string;
+    firstName: string;
+    reason: string;
+  }): Promise<void>;
 }

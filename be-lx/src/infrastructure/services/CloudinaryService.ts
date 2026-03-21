@@ -1,5 +1,8 @@
 import { v2 as cloudinary } from "cloudinary";
-import { ICloudinaryService } from "@domain/services/ICloudinaryService";
+import {
+  CloudinaryUploadResult,
+  ICloudinaryService,
+} from "@domain/services/ICloudinaryService";
 
 export class CloudinaryService implements ICloudinaryService {
   constructor() {
@@ -13,12 +16,13 @@ export class CloudinaryService implements ICloudinaryService {
   async uploadImage(
     file: Express.Multer.File,
     folder?: string,
-  ): Promise<{ url: string; publicId: string }> {
+  ): Promise<CloudinaryUploadResult> {
     return new Promise((resolve, reject) => {
       const uploadStream = cloudinary.uploader.upload_stream(
         {
           folder: folder || "luuxa",
           resource_type: "image",
+          overwrite: false,
         },
         (error, result) => {
           if (error) return reject(error);
@@ -26,6 +30,11 @@ export class CloudinaryService implements ICloudinaryService {
           resolve({
             url: result.secure_url,
             publicId: result.public_id,
+            resourceType: result.resource_type,
+            format: result.format,
+            width: result.width,
+            height: result.height,
+            bytes: result.bytes,
           });
         },
       );
@@ -41,7 +50,7 @@ export class CloudinaryService implements ICloudinaryService {
   async uploadMultiple(
     files: Express.Multer.File[],
     folder?: string,
-  ): Promise<{ url: string; publicId: string }[]> {
+  ): Promise<CloudinaryUploadResult[]> {
     const uploadPromises = files.map((file) => this.uploadImage(file, folder));
     return Promise.all(uploadPromises);
   }

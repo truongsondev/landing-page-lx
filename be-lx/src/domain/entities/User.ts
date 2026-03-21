@@ -9,6 +9,7 @@ export enum AccountStatus {
   UNVERIFIED = "UNVERIFIED",
   PENDING = "PENDING",
   ACTIVE = "ACTIVE",
+  INACTIVE = "INACTIVE",
 }
 
 export interface User extends IEntity {

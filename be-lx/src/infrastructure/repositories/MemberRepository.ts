@@ -1,10 +1,15 @@
-import { PrismaClient } from "@prisma/client";
 import { Member } from "@domain/entities/Member";
-import { IMemberRepository } from "@domain/repositories/IMemberRepository";
+import {
+  AdminMemberSummary,
+  GetAdminMembersFilters,
+  IMemberRepository,
+} from "@domain/repositories/IMemberRepository";
+import { AccountStatus } from "@domain/entities/User";
 import { mapMember } from "@infrastructure/mappers/prismaMapper";
+import prismaClient from "@infrastructure/database/prisma";
 
 export class MemberRepository implements IMemberRepository {
-  constructor(private prisma: PrismaClient) {}
+  constructor(private prisma: typeof prismaClient) {}
 
   async findById(id: string): Promise<Member | null> {
     const member = await this.prisma.member.findUnique({
@@ -89,5 +94,54 @@ export class MemberRepository implements IMemberRepository {
     ]);
 
     return { members: members.map(mapMember), total };
+  }
+
+  async findAllUsersForAdmin(
+    filters?: GetAdminMembersFilters,
+  ): Promise<{ members: AdminMemberSummary[]; total: number }> {
+    const {
+      page = 1,
+      limit = 10,
+      status,
+      sortBy = "createdAt",
+      sortOrder = "desc",
+    } = filters || {};
+
+    const where: any = {
+      ...(status ? { accountStatus: status as AccountStatus } : {}),
+    };
+
+    const orderBy: any = {
+      [sortBy]: sortOrder,
+    };
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          lastName: true,
+          accountStatus: true,
+          avatar: true,
+        },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy,
+      }),
+
+      this.prisma.user.count({ where }),
+    ]);
+    const members: AdminMemberSummary[] = users.map((user: any) => ({
+      id: user.id,
+      email: user.email,
+      firstName: user.firstName,
+      lastName: user.lastName,
+      accountStatus: user.accountStatus as unknown as AccountStatus,
+      avatar: user.avatar ?? undefined,
+    }));
+
+    return { members, total };
   }
 }

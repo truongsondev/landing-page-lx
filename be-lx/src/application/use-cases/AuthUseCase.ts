@@ -116,6 +116,10 @@ export class AuthUseCase {
       );
     }
 
+    if (user.accountStatus === AccountStatus.INACTIVE) {
+      throw new ForbiddenError("Tài khoản đã bị khóa");
+    }
+
     if (user.accountStatus !== AccountStatus.ACTIVE) {
       throw new ForbiddenError("Tài khoản chưa được kích hoạt");
     }
@@ -209,6 +213,10 @@ export class AuthUseCase {
     const user = await this.userRepository.findById(storedToken.userId);
     if (!user) {
       throw new NotFoundError("Không tìm thấy người dùng");
+    }
+
+    if (user.accountStatus === AccountStatus.INACTIVE) {
+      throw new ForbiddenError("Tài khoản đã bị khóa");
     }
 
     if (user.accountStatus !== AccountStatus.ACTIVE) {
@@ -317,6 +325,10 @@ export class AuthUseCase {
   }
 
   async activateUser(userId: string): Promise<{ message: string }> {
+    return this.approveMember(userId);
+  }
+
+  async approveMember(userId: string): Promise<{ message: string }> {
     const user = await this.userRepository.findById(userId);
     if (!user) {
       throw new BadRequestError("Không tìm thấy người dùng");
@@ -328,11 +340,73 @@ export class AuthUseCase {
       );
     }
 
+    if (user.accountStatus !== AccountStatus.PENDING) {
+      throw new BadRequestError(
+        "Chỉ có thể duyệt thành viên ở trạng thái PENDING",
+      );
+    }
+
     await this.userRepository.update(user.id, {
       accountStatus: AccountStatus.ACTIVE,
     });
 
-    return { message: "Kích hoạt tài khoản thành công" };
+    return { message: "Duyệt thành viên thành công" };
+  }
+
+  async blockMember(userId: string): Promise<{ message: string }> {
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestError("Không tìm thấy người dùng");
+    }
+
+    if (user.accountStatus !== AccountStatus.ACTIVE) {
+      throw new BadRequestError(
+        "Chỉ có thể khóa thành viên ở trạng thái ACTIVE",
+      );
+    }
+
+    await this.userRepository.update(user.id, {
+      accountStatus: AccountStatus.INACTIVE,
+    });
+
+    await this.refreshTokenRepository.revokeAllByUserId(user.id, "BLOCKED");
+
+    return { message: "Khóa thành viên thành công" };
+  }
+
+  async rejectMember(
+    userId: string,
+    reason: string,
+  ): Promise<{ message: string }> {
+    const normalizedReason = reason?.trim();
+    if (!normalizedReason) {
+      throw new BadRequestError("Lý do từ chối là bắt buộc");
+    }
+
+    const user = await this.userRepository.findById(userId);
+    if (!user) {
+      throw new BadRequestError("Không tìm thấy người dùng");
+    }
+
+    if (user.accountStatus !== AccountStatus.PENDING) {
+      throw new BadRequestError(
+        "Chỉ có thể từ chối thành viên ở trạng thái PENDING",
+      );
+    }
+
+    await this.userRepository.update(user.id, {
+      accountStatus: AccountStatus.INACTIVE,
+    });
+
+    await this.refreshTokenRepository.revokeAllByUserId(user.id, "REJECTED");
+
+    await this.emailService.sendMemberRejectionEmail({
+      email: user.email,
+      firstName: user.firstName,
+      reason: normalizedReason,
+    });
+
+    return { message: "Từ chối duyệt thành viên thành công" };
   }
 
   async getMe(userId: string): Promise<{

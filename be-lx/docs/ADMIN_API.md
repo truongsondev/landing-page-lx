@@ -224,3 +224,11 @@ curl -X POST http://localhost:3000/api/posts \
    - validation test (`400`)
    - happy-path create/update member và notification
 4. Nếu cần tách rõ “Thông báo” khỏi `Post`, nên tạo model riêng `Notification`.
+
+---
+
+## 7. API duyet/khoa/tu choi thanh vien
+
+Tai lieu chi tiet cho 3 API moderation member (`approve`, `block`, `reject`) xem tai:
+
+- `docs/ADMIN_MEMBER_MODERATION_API.md`

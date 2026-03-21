@@ -17,7 +17,7 @@ export function DashboardPage() {
 
   const members = useQuery({
     queryKey: ["dashboard", "members"],
-    queryFn: () => membersService.getAll({ limit: 5 }),
+    queryFn: () => membersService.getAllAdminUsers({ limit: 5 }),
     enabled: user?.role === "ADMIN",
   });
 
@@ -41,9 +41,7 @@ export function DashboardPage() {
         </div>
         <div className="rounded-xl border border-slate-200 p-4">
           <p className="text-sm text-slate-500">Thành viên</p>
-          <p className="text-2xl font-bold">
-            {members.data?.data?.length || 0}
-          </p>
+          <p className="text-2xl font-bold">{members.data?.total || 0}</p>
         </div>
         <div className="rounded-xl border border-slate-200 p-4">
           <p className="text-sm text-slate-500">Hoạt động sắp tới</p>
@@ -67,10 +65,10 @@ export function DashboardPage() {
           Tạo hoạt động mới
         </Link>
         <Link
-          to="/dashboard/members/create"
+          to="/dashboard/members"
           className="rounded-lg bg-slate-900 px-4 py-3 text-center font-semibold text-white"
         >
-          Thêm thành viên
+          Quản lý thành viên
         </Link>
       </div>
     </div>

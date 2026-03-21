@@ -13,7 +13,7 @@ export function PublicFooter() {
           />
           <p>© 2026 Đa Minh Thủ Đức 2. All rights reserved.</p>
         </div>
-        <p>Email: contact@luuxa.vn</p>
+        <p>Email: sonltute@gmail.com</p>
       </div>
     </footer>
   );
