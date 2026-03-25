@@ -1,7 +1,10 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Loading } from "@/components/common/Loading";
 import { ErrorState } from "@/components/common/ErrorState";
+import { mealSignUpsService } from "@/services/meal-signups.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 type Period = "morning" | "afternoon";
 
@@ -18,12 +21,28 @@ interface CookScheduleSlot {
 }
 
 export function MealSignUpPage() {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
     const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+    const dayOfWeekMap = useMemo(
+        () => Object.fromEntries(days.map((day, index) => [day, index + 1])) as Record<string, number>,
+        [days]
+    );
 
     const periods: { key: Period; label: string }[] = [
         { key: "morning", label: "Sáng" },
         { key: "afternoon", label: "Chiều" },
     ];
+
+    const weekStartDate = useMemo(() => {
+        const now = new Date();
+        const day = now.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diff);
+        monday.setHours(0, 0, 0, 0);
+        return monday.toISOString().slice(0, 10);
+    }, []);
 
     const mealData = useQuery({
         queryKey: ["meal-data"],
@@ -83,15 +102,80 @@ export function MealSignUpPage() {
         },
     });
 
-    const [mealSignUps, setMealSignUps] = useState<MealSlot[]>(
+    const createDefaultMealSignUps = () =>
         days.flatMap((day) =>
             periods.map((p) => ({
                 day,
                 period: p.key,
                 isSelected: false,
             }))
-        )
-    );
+        );
+
+    const createMealSignUpsFromSlots = (slots: { dayOfWeek: number; period: Period }[]) => {
+        const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.period}`));
+        return days.flatMap((day) =>
+            periods.map((p) => ({
+                day,
+                period: p.key,
+                isSelected: selectedSet.has(`${dayOfWeekMap[day]}-${p.key}`),
+            }))
+        );
+    };
+
+    const [mealSignUps, setMealSignUps] = useState<MealSlot[]>(createDefaultMealSignUps);
+    const [savedMealSignUps, setSavedMealSignUps] = useState<MealSlot[]>(createDefaultMealSignUps);
+
+    const myWeekSignUpQuery = useQuery({
+        queryKey: ["my-meal-signups", weekStartDate],
+        queryFn: () => mealSignUpsService.getMyWeek(weekStartDate),
+        enabled: isAuthenticated,
+    });
+
+    useEffect(() => {
+        if (!myWeekSignUpQuery.data?.slots) return;
+
+        const mapped = createMealSignUpsFromSlots(
+            myWeekSignUpQuery.data.slots.map((slot) => ({
+                dayOfWeek: slot.dayOfWeek,
+                period: slot.period,
+            }))
+        );
+
+        setMealSignUps(mapped);
+        setSavedMealSignUps(mapped);
+    }, [myWeekSignUpQuery.data]);
+
+    const saveMealSignUpsMutation = useMutation({
+        mutationFn: () => {
+            const slots = mealSignUps
+                .filter((slot) => slot.isSelected)
+                .map((slot) => ({
+                    dayOfWeek: dayOfWeekMap[slot.day],
+                    period: slot.period,
+                }));
+
+            return mealSignUpsService.saveMyWeek({
+                weekStartDate,
+                slots,
+            });
+        },
+        onSuccess: () => {
+            setSavedMealSignUps(mealSignUps.map((slot) => ({ ...slot })));
+            toast.success("Đã lưu đăng ký cơm");
+        },
+        onError: () => {
+            toast.error("Lưu đăng ký cơm thất bại");
+        },
+    });
+
+    const hasChanges = mealSignUps.some((slot, index) => {
+        const savedSlot = savedMealSignUps[index];
+        return (
+            savedSlot?.day !== slot.day ||
+            savedSlot?.period !== slot.period ||
+            savedSlot?.isSelected !== slot.isSelected
+        );
+    });
 
     const handleChange = (day: string, period: Period) => {
         setMealSignUps((prev) =>
@@ -103,8 +187,22 @@ export function MealSignUpPage() {
         );
     };
 
+    const handleResetChanges = () => {
+        setMealSignUps(savedMealSignUps.map((slot) => ({ ...slot })));
+    };
+
+    const handleSaveChanges = () => {
+        if (!isAuthenticated) {
+            toast.error("Vui lòng đăng nhập để lưu đăng ký cơm");
+            return;
+        }
+        saveMealSignUpsMutation.mutate();
+    };
+
     if (mealData.isLoading) return <Loading />;
     if (mealData.isError || !mealData.data) return <ErrorState />;
+    if (isAuthenticated && myWeekSignUpQuery.isLoading) return <Loading />;
+    if (isAuthenticated && myWeekSignUpQuery.isError) return <ErrorState onRetry={myWeekSignUpQuery.refetch} />;
 
     return (
         <div className="space-y-6">
@@ -155,6 +253,26 @@ export function MealSignUpPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {hasChanges && (
+                    <div className="mt-4 flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={handleResetChanges}
+                            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                        >
+                            Quay lại
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveChanges}
+                            disabled={saveMealSignUpsMutation.isPending}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                        >
+                            {saveMealSignUpsMutation.isPending ? "Đang lưu..." : "Lưu"}
+                        </button>
+                    </div>
+                )}
             </section>
 
             {/* 2. Số người */}

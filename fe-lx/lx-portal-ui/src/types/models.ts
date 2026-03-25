@@ -87,3 +87,10 @@ export interface Activity {
   organizerId?: string;
   isRequired?: boolean;
 }
+
+export type MealPeriod = "morning" | "afternoon";
+
+export interface MealSignUpSlot {
+  dayOfWeek: number;
+  period: MealPeriod;
+}
