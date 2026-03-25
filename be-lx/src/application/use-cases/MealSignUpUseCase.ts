@@ -22,6 +22,46 @@ export class MealSignUpUseCase {
     };
   }
 
+  async getWeekCounts(weekStartDate: Date) {
+    this.validateWeekStartDate(weekStartDate);
+
+    const counts = await this.mealSignUpRepository.countByWeek(weekStartDate);
+
+    return {
+      weekStartDate: this.toDateOnly(weekStartDate),
+      counts,
+    };
+  }
+
+  async getWeekSlotUsers(
+    weekStartDate: Date,
+    dayOfWeek: number,
+    period: "morning" | "afternoon",
+  ) {
+    this.validateWeekStartDate(weekStartDate);
+
+    if (!Number.isInteger(dayOfWeek) || dayOfWeek < 1 || dayOfWeek > 7) {
+      throw new ValidationError("Ngày trong tuần phải nằm trong khoảng từ 1 đến 7");
+    }
+
+    if (period !== "morning" && period !== "afternoon") {
+      throw new ValidationError("Buổi ăn không hợp lệ");
+    }
+
+    const users = await this.mealSignUpRepository.findUsersByWeekSlot(
+      weekStartDate,
+      dayOfWeek,
+      period,
+    );
+
+    return {
+      weekStartDate: this.toDateOnly(weekStartDate),
+      dayOfWeek,
+      period,
+      users,
+    };
+  }
+
   async saveMyWeekSignUps(
     userId: string,
     weekStartDate: Date,

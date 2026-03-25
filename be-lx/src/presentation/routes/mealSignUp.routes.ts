@@ -33,6 +33,58 @@ router.get(
   },
 );
 
+router.get(
+  "/week-counts",
+  authenticate,
+  [
+    query("weekStartDate")
+      .isISO8601()
+      .withMessage("Ngày bắt đầu tuần không hợp lệ"),
+  ],
+  validate,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const weekStartDate = new Date(req.query.weekStartDate as string);
+      const result = await mealSignUpUseCase.getWeekCounts(weekStartDate);
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
+router.get(
+  "/week-slot-users",
+  authenticate,
+  [
+    query("weekStartDate")
+      .isISO8601()
+      .withMessage("Ngày bắt đầu tuần không hợp lệ"),
+    query("dayOfWeek")
+      .isInt({ min: 1, max: 7 })
+      .withMessage("Ngày trong tuần phải nằm trong khoảng từ 1 đến 7"),
+    query("period")
+      .isIn(["morning", "afternoon"])
+      .withMessage("Buổi ăn không hợp lệ"),
+  ],
+  validate,
+  async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const weekStartDate = new Date(req.query.weekStartDate as string);
+      const dayOfWeek = parseInt(req.query.dayOfWeek as string, 10);
+      const period = req.query.period as "morning" | "afternoon";
+      const result = await mealSignUpUseCase.getWeekSlotUsers(
+        weekStartDate,
+        dayOfWeek,
+        period,
+      );
+      res.json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+);
+
 router.post(
   "/my-week",
   authenticate,
