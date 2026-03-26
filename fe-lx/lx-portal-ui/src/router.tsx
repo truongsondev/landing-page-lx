@@ -30,22 +30,27 @@ export const router = createBrowserRouter([
   {
     element: <PublicLayout />,
     children: [
-      { path: "/", element: <HomePage /> },
-      { path: "/posts", element: <PostsPage /> },
-      { path: "/posts/:slug", element: <PostDetailPage /> },
-      { path: "/members", element: <MembersPage /> },
-      { path: "/members/:id", element: <MemberDetailPage /> },
-      { path: "/activities", element: <ActivitiesPage /> },
-      { path: "/activities/:id", element: <ActivityDetailPage /> },
-      { path: "/login", element: <LoginPage /> },
+      {
+        element: <ProtectedRoute />,
+        children: [
+          { path: "/", element: <HomePage /> },
+          { path: "/posts", element: <PostsPage /> },
+          { path: "/posts/:slug", element: <PostDetailPage /> },
+          { path: "/members", element: <MembersPage /> },
+          { path: "/members/:id", element: <MemberDetailPage /> },
+          { path: "/activities", element: <ActivitiesPage /> },
+          { path: "/activities/:id", element: <ActivityDetailPage /> },
+          { path: "/meal-sign-up", element: <MealSignUpPage /> },
+        ],
+      },
       { path: "/register", element: <RegisterPage /> },
       { path: "/verify-email", element: <VerifyEmailPage /> },
       { path: "/email-verified", element: <EmailVerifiedPage /> },
       { path: "/email-verify-failed", element: <EmailVerifyFailedPage /> },
       { path: "/unauthorized", element: <UnauthorizedPage /> },
-      { path: "/meal-sign-up", element: <MealSignUpPage /> },
     ],
   },
+  { path: "/login", element: <LoginPage /> },
   {
     element: <ProtectedRoute />,
     children: [

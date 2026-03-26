@@ -1,7 +1,14 @@
-import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { X } from "lucide-react";
+import { toast } from "sonner";
 import { Loading } from "@/components/common/Loading";
 import { ErrorState } from "@/components/common/ErrorState";
+import {
+    mealSignUpsService,
+    type MealPeriod,
+} from "@/services/meal-signups.service";
+import { useAuthStore } from "@/stores/auth.store";
 
 type Period = "morning" | "afternoon";
 
@@ -17,13 +24,34 @@ interface CookScheduleSlot {
     cookNames: string[];
 }
 
+interface SlotUsersPopupState {
+    day: string;
+    period: Period;
+}
+
 export function MealSignUpPage() {
+    const isAuthenticated = useAuthStore((state) => state.isAuthenticated);
+
     const days = ["Thứ 2", "Thứ 3", "Thứ 4", "Thứ 5", "Thứ 6", "Thứ 7", "Chủ nhật"];
+    const dayOfWeekMap = useMemo(
+        () => Object.fromEntries(days.map((day, index) => [day, index + 1])) as Record<string, number>,
+        [days]
+    );
 
     const periods: { key: Period; label: string }[] = [
         { key: "morning", label: "Sáng" },
         { key: "afternoon", label: "Chiều" },
     ];
+
+    const weekStartDate = useMemo(() => {
+        const now = new Date();
+        const day = now.getDay();
+        const diff = day === 0 ? -6 : 1 - day;
+        const monday = new Date(now);
+        monday.setDate(now.getDate() + diff);
+        monday.setHours(0, 0, 0, 0);
+        return monday.toISOString().slice(0, 10);
+    }, []);
 
     const mealData = useQuery({
         queryKey: ["meal-data"],
@@ -73,25 +101,108 @@ export function MealSignUpPage() {
             ]);
 
             return {
-                mealCounts: days.map((day) => ({
-                    day,
-                    morning: Math.floor(Math.random() * 10),
-                    afternoon: Math.floor(Math.random() * 10),
-                })),
                 cookSchedule,
             };
         },
     });
 
-    const [mealSignUps, setMealSignUps] = useState<MealSlot[]>(
+    const weekCountsQuery = useQuery({
+        queryKey: ["meal-week-counts", weekStartDate],
+        queryFn: () => mealSignUpsService.getWeekCounts(weekStartDate),
+        enabled: isAuthenticated,
+    });
+
+    const createDefaultMealSignUps = () =>
         days.flatMap((day) =>
             periods.map((p) => ({
                 day,
                 period: p.key,
                 isSelected: false,
             }))
-        )
-    );
+        );
+
+    const createMealSignUpsFromSlots = (slots: { dayOfWeek: number; period: Period }[]) => {
+        const selectedSet = new Set(slots.map((slot) => `${slot.dayOfWeek}-${slot.period}`));
+        return days.flatMap((day) =>
+            periods.map((p) => ({
+                day,
+                period: p.key,
+                isSelected: selectedSet.has(`${dayOfWeekMap[day]}-${p.key}`),
+            }))
+        );
+    };
+
+    const [mealSignUps, setMealSignUps] = useState<MealSlot[]>(createDefaultMealSignUps);
+    const [savedMealSignUps, setSavedMealSignUps] = useState<MealSlot[]>(createDefaultMealSignUps);
+    const [slotUsersPopup, setSlotUsersPopup] = useState<SlotUsersPopupState | null>(null);
+
+    const myWeekSignUpQuery = useQuery({
+        queryKey: ["my-meal-signups", weekStartDate],
+        queryFn: () => mealSignUpsService.getMyWeek(weekStartDate),
+        enabled: isAuthenticated,
+    });
+
+    const slotUsersQuery = useQuery({
+        queryKey: [
+            "meal-slot-users",
+            weekStartDate,
+            slotUsersPopup?.day,
+            slotUsersPopup?.period,
+        ],
+        queryFn: () =>
+            mealSignUpsService.getWeekSlotUsers(
+                weekStartDate,
+                dayOfWeekMap[slotUsersPopup!.day],
+                slotUsersPopup!.period as MealPeriod
+            ),
+        enabled: isAuthenticated && Boolean(slotUsersPopup),
+    });
+
+    useEffect(() => {
+        if (!myWeekSignUpQuery.data?.slots) return;
+
+        const mapped = createMealSignUpsFromSlots(
+            myWeekSignUpQuery.data.slots.map((slot) => ({
+                dayOfWeek: slot.dayOfWeek,
+                period: slot.period,
+            }))
+        );
+
+        setMealSignUps(mapped);
+        setSavedMealSignUps(mapped);
+    }, [myWeekSignUpQuery.data]);
+
+    const saveMealSignUpsMutation = useMutation({
+        mutationFn: () => {
+            const slots = mealSignUps
+                .filter((slot) => slot.isSelected)
+                .map((slot) => ({
+                    dayOfWeek: dayOfWeekMap[slot.day],
+                    period: slot.period,
+                }));
+
+            return mealSignUpsService.saveMyWeek({
+                weekStartDate,
+                slots,
+            });
+        },
+        onSuccess: () => {
+            setSavedMealSignUps(mealSignUps.map((slot) => ({ ...slot })));
+            toast.success("Đã lưu đăng ký cơm");
+        },
+        onError: () => {
+            toast.error("Lưu đăng ký cơm thất bại");
+        },
+    });
+
+    const hasChanges = mealSignUps.some((slot, index) => {
+        const savedSlot = savedMealSignUps[index];
+        return (
+            savedSlot?.day !== slot.day ||
+            savedSlot?.period !== slot.period ||
+            savedSlot?.isSelected !== slot.isSelected
+        );
+    });
 
     const handleChange = (day: string, period: Period) => {
         setMealSignUps((prev) =>
@@ -103,8 +214,29 @@ export function MealSignUpPage() {
         );
     };
 
+    const handleResetChanges = () => {
+        setMealSignUps(savedMealSignUps.map((slot) => ({ ...slot })));
+    };
+
+    const handleSaveChanges = () => {
+        if (!isAuthenticated) {
+            toast.error("Vui lòng đăng nhập để lưu đăng ký cơm");
+            return;
+        }
+        saveMealSignUpsMutation.mutate();
+    };
+
     if (mealData.isLoading) return <Loading />;
     if (mealData.isError || !mealData.data) return <ErrorState />;
+    if (isAuthenticated && weekCountsQuery.isLoading) return <Loading />;
+    if (isAuthenticated && weekCountsQuery.isError) return <ErrorState onRetry={weekCountsQuery.refetch} />;
+    if (isAuthenticated && myWeekSignUpQuery.isLoading) return <Loading />;
+    if (isAuthenticated && myWeekSignUpQuery.isError) return <ErrorState onRetry={myWeekSignUpQuery.refetch} />;
+
+    const mealCountsMap = new Map<string, number>();
+    for (const item of weekCountsQuery.data?.counts || []) {
+        mealCountsMap.set(`${item.dayOfWeek}-${item.period}`, item.count);
+    }
 
     return (
         <div className="space-y-6">
@@ -155,6 +287,26 @@ export function MealSignUpPage() {
                         </tbody>
                     </table>
                 </div>
+
+                {hasChanges && (
+                    <div className="mt-4 flex items-center justify-end gap-3">
+                        <button
+                            type="button"
+                            onClick={handleResetChanges}
+                            className="rounded-lg border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50"
+                        >
+                            Quay lại
+                        </button>
+                        <button
+                            type="button"
+                            onClick={handleSaveChanges}
+                            disabled={saveMealSignUpsMutation.isPending}
+                            className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                        >
+                            {saveMealSignUpsMutation.isPending ? "Đang lưu..." : "Lưu"}
+                        </button>
+                    </div>
+                )}
             </section>
 
             {/* 2. Số người */}
@@ -178,13 +330,16 @@ export function MealSignUpPage() {
                                 <tr key={p.key} className="hover:bg-blue-50/40">
                                     <td className="border-b border-slate-100 p-3 font-medium text-slate-700">{p.label}</td>
                                     {days.map((day) => {
-                                        const count = mealData.data.mealCounts.find((c) => c.day === day);
-                                        const value = p.key === "morning" ? count?.morning : count?.afternoon;
+                                        const value = mealCountsMap.get(`${dayOfWeekMap[day]}-${p.key}`) || 0;
                                         return (
                                             <td key={day} className="border-b border-slate-100 p-3 text-center">
-                                                <span className="inline-flex min-w-8 items-center justify-center rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700">
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSlotUsersPopup({ day, period: p.key })}
+                                                    className="inline-flex min-w-8 items-center justify-center rounded-full bg-indigo-50 px-2 py-0.5 font-semibold text-indigo-700 transition hover:bg-indigo-100"
+                                                >
                                                     {value}
-                                                </span>
+                                                </button>
                                             </td>
                                         );
                                     })}
@@ -253,6 +408,55 @@ export function MealSignUpPage() {
                     </table>
                 </div>
             </section>
+
+            {slotUsersPopup && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+                    <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl">
+                        <button
+                            type="button"
+                            onClick={() => setSlotUsersPopup(null)}
+                            aria-label="Đóng popup"
+                            className="absolute right-4 top-4 rounded-md p-1.5 text-slate-500 transition hover:bg-slate-100 hover:text-slate-700"
+                        >
+                            <X size={18} />
+                        </button>
+
+                        <h3 className="mb-1 text-lg font-bold text-slate-800">
+                            Danh sách đăng ký cơm
+                        </h3>
+                        <p className="mb-4 text-sm text-slate-600">
+                            {slotUsersPopup.day} - {slotUsersPopup.period === "morning" ? "Sáng" : "Chiều"}
+                        </p>
+
+                        {slotUsersQuery.isLoading ? (
+                            <p className="text-sm text-slate-500">Đang tải dữ liệu...</p>
+                        ) : slotUsersQuery.isError ? (
+                            <p className="text-sm text-red-600">Không thể tải danh sách đăng ký.</p>
+                        ) : (slotUsersQuery.data?.users.length || 0) === 0 ? (
+                            <p className="text-sm text-slate-500">Chưa có ai đăng ký cho khung giờ này.</p>
+                        ) : (
+                            <div className="max-h-80 space-y-3 overflow-y-auto pr-1">
+                                {slotUsersQuery.data?.users.map((user) => (
+                                    <div key={user.userId} className="flex items-center gap-3 rounded-xl border border-slate-200 px-3 py-2">
+                                        {user.avatar ? (
+                                            <img
+                                                src={user.avatar}
+                                                alt={user.name}
+                                                className="h-10 w-10 rounded-full object-cover"
+                                            />
+                                        ) : (
+                                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-200 text-sm font-semibold text-slate-700">
+                                                {user.name.charAt(0).toUpperCase()}
+                                            </div>
+                                        )}
+                                        <span className="text-sm font-medium text-slate-800">{user.name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
         </div>
     );
 }

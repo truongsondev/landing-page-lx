@@ -7,6 +7,7 @@ import authRoutes from "./routes/auth.routes";
 import postRoutes from "./routes/post.routes";
 import memberRoutes from "./routes/member.routes";
 import activityRoutes from "./routes/activity.routes";
+import mealSignUpRoutes from "./routes/mealSignUp.routes";
 import { errorHandler } from "@infrastructure/middlewares/errorHandler";
 import { sanitizeRequestBody } from "@infrastructure/middlewares/sanitize";
 import { generalLimiter } from "@infrastructure/middlewares/rateLimiter";
@@ -47,6 +48,7 @@ app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
 app.use("/api/members", memberRoutes);
 app.use("/api/activities", activityRoutes);
+app.use("/api/meal-signups", mealSignUpRoutes);
 
 // Error handler
 app.use(errorHandler);
