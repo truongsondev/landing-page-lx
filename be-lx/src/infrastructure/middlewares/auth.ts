@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
 import { Role } from "@domain/entities/User";
+import prisma from "@infrastructure/database/prisma";
 
 export interface AuthRequest extends Request {
   user?: {
@@ -10,7 +11,7 @@ export interface AuthRequest extends Request {
   };
 }
 
-export const authenticate = (
+export const authenticate = async (
   req: AuthRequest,
   res: Response,
   next: NextFunction,
@@ -36,7 +37,21 @@ export const authenticate = (
       return res.status(401).json({ message: "Access token không hợp lệ" });
     }
 
-    req.user = decoded;
+    const user = await prisma.user.findUnique({
+      where: { id: decoded.id },
+      select: { id: true, email: true, role: true },
+    });
+
+    if (!user) {
+      return res.status(401).json({ message: "Phiên đăng nhập không hợp lệ" });
+    }
+
+    req.user = {
+      id: user.id,
+      email: user.email,
+      role: user.role as Role,
+    };
+
     next();
   } catch (error) {
     return res.status(401).json({ message: "Token không hợp lệ" });

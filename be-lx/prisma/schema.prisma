@@ -43,6 +43,7 @@ model User {
   id        String   @id @default(uuid())
   email     String   @unique
   password  String
+  name      String?
   firstName String
   lastName  String
   role      Role     @default(MEMBER)
@@ -61,8 +62,48 @@ model User {
   sportActivities SportActivity[]
   refreshTokens   RefreshToken[]
   mealSignUps     MealSignUp[]
+  mealCookSignUps MealCookSignUp[]
+  mealCookPermission MealCookPermission?
 
   @@map("users")
+}
+
+model MealCookPermission {
+  id        String   @id @default(uuid())
+  userId    String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("meal_cook_permissions")
+}
+
+model MealCookOpenWindow {
+  id        String   @id @default(uuid())
+  openedAt  DateTime @default(now())
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([openedAt])
+  @@map("meal_cook_open_windows")
+}
+
+model MealCookSignUp {
+  id            String     @id @default(uuid())
+  userId        String
+  weekStartDate DateTime   @db.Date
+  dayOfWeek     Int
+  period        MealPeriod
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, weekStartDate])
+  @@index([weekStartDate, dayOfWeek, period])
+  @@map("meal_cook_signups")
 }
 
 model MealSignUp {

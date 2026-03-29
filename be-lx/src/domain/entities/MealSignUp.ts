@@ -13,3 +13,18 @@ export interface MealSignUpSlot {
   dayOfWeek: number;
   period: MealPeriod;
 }
+
+export interface MealCookSignUpSlot {
+  dayOfWeek: number;
+  period: MealPeriod;
+}
+
+export interface MealCookSignUpUser {
+  userId: string;
+  name: string;
+  avatar?: string;
+}
+
+export interface MealCookScheduleEntry extends MealCookSignUpSlot {
+  user: MealCookSignUpUser;
+}
